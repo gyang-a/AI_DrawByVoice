@@ -1,5 +1,6 @@
 .command-panel {
   height: 100%;
+  width: 320px;
   min-height: 520px;
   padding: 20px;
   border: 1px solid #dfe5ef;
@@ -43,14 +44,18 @@
 }
 
 .command-panel__json {
+  width: 100%;
+  height: 260px;
   overflow: auto;
   margin: 0;
-  min-height: 220px;
+  min-height: 0;
+  max-width: 100%;
   color: #f8fafc;
   background: #111827;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
   line-height: 1.7;
+  white-space: pre;
 }
 
 .command-panel__history {

@@ -1,8 +1,22 @@
 import './VoicePanel.css';
 
-export function VoicePanel() {
-  const quickCommands = ['画红色圆形', '画蓝色矩形', '撤销', '清空画布'];
+type VoicePanelCommand = {
+  label: string;
+};
 
+type VoicePanelProps<TCommand extends VoicePanelCommand> = {
+  commands: TCommand[];
+  currentText: string;
+  currentReply: string;
+  onCommandSelect: (command: TCommand) => void;
+};
+
+export function VoicePanel<TCommand extends VoicePanelCommand>({
+  commands,
+  currentText,
+  currentReply,
+  onCommandSelect,
+}: VoicePanelProps<TCommand>) {
   return (
     <section className="voice-panel" aria-labelledby="voice-panel-title">
       <h2 id="voice-panel-title">语音控制</h2>
@@ -14,20 +28,20 @@ export function VoicePanel() {
       </div>
       <div className="voice-panel__section">
         <h3>识别文本</h3>
-        <p className="voice-panel__box">画一个红色的圆形</p>
+        <p className="voice-panel__box">{currentText}</p>
       </div>
       <div className="voice-panel__section">
         <h3>AI 回复</h3>
         <p className="voice-panel__box voice-panel__box--reply">
-          好的，已为你画一个红色的圆形。
+          {currentReply}
         </p>
       </div>
       <div className="voice-panel__section">
         <h3>快捷指令（测试用）</h3>
         <div className="voice-panel__quick-actions" aria-label="快捷指令占位">
-          {quickCommands.map((command) => (
-            <button key={command} type="button">
-              {command}
+          {commands.map((command) => (
+            <button key={command.label} type="button" onClick={() => onCommandSelect(command)}>
+              {command.label}
             </button>
           ))}
         </div>

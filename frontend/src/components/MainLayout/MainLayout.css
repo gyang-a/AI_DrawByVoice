@@ -10,11 +10,11 @@
 }
 
 .main-layout__content {
-  width: min(100%, 1440px);
+  width: min(100%, 1510px);
   margin: 0 auto;
-  padding: 24px;
+  padding: 12px;
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr) minmax(280px, 340px);
+  grid-template-columns: 300px 842px 320px;
   gap: 24px;
   flex: 1;
 }
