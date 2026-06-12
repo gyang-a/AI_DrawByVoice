@@ -39,6 +39,12 @@
   background: #f8fafc;
 }
 
+.voice-panel__placeholder--active {
+  color: #b42318;
+  border-color: #fda29b;
+  background: #fff1f0;
+}
+
 .voice-panel__mic {
   width: 88px;
   height: 88px;
@@ -48,6 +54,11 @@
   background: linear-gradient(135deg, #4263eb, #7048e8);
   font-size: 32px;
   box-shadow: 0 14px 28px rgba(66, 99, 235, 0.28);
+}
+
+.voice-panel__mic:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .voice-panel__section {

@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.command import router as command_router
 from app.api.routes.health import router as health_router
+from app.api.routes.speech import router as speech_router
+from app.core.config import load_environment
+
+load_environment()
 
 app = FastAPI(title="VoiceCanvas API")
 
@@ -16,3 +20,4 @@ app.add_middleware(
 
 app.include_router(command_router, prefix="/api/commands")
 app.include_router(health_router, prefix="/api")
+app.include_router(speech_router, prefix="/api/speech")

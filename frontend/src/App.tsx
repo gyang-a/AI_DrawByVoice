@@ -4,7 +4,9 @@ import { CommandPanel } from './components/CommandPanel/CommandPanel';
 import { Header } from './components/Header/Header';
 import { MainLayout } from './components/MainLayout/MainLayout';
 import { VoicePanel } from './components/VoicePanel/VoicePanel';
+import { useAudioRecorder } from './hooks/useAudioRecorder';
 import { parseCommand } from './services/commandApi';
+import { recognizeSpeech } from './services/speechApi';
 import type { DrawingCommand, ExecutableDrawingCommand, Shape } from './types/drawing';
 import { executeCommand, isExecutableCommand } from './utils/executeCommand';
 import './App.css';
@@ -46,6 +48,8 @@ function App() {
   const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [isParsingCommand, setIsParsingCommand] = useState(false);
+  const [isRecognizingSpeech, setIsRecognizingSpeech] = useState(false);
+  const audioRecorder = useAudioRecorder();
 
   function applyExecutableCommand(command: ExecutableDrawingCommand) {
     setHistory((previousHistory) => [...previousHistory, shapes]);
@@ -63,20 +67,20 @@ function App() {
     setHistory((previousHistory) => previousHistory.slice(0, -1));
   }
 
-  async function applyTestCommand(testCommand: TestCommand) {
-    setCurrentText(testCommand.text);
+  async function submitTextCommand(text: string) {
+    setCurrentText(text);
     setCurrentReply('正在解析指令。');
     setCurrentCommand(null);
     setIsParsingCommand(true);
-    setCommandHistory((previousHistory) => [testCommand.text, ...previousHistory].slice(0, 5));
+    setCommandHistory((previousHistory) => [text, ...previousHistory].slice(0, 5));
 
     try {
       const response = await parseCommand({
-        text: testCommand.text,
+        text,
         scene: shapes,
       });
 
-      setCurrentText(response.recognizedText ?? testCommand.text);
+      setCurrentText(response.recognizedText ?? text);
       setCurrentReply(response.reply);
       setCurrentCommand(response.command);
 
@@ -93,6 +97,35 @@ function App() {
     }
   }
 
+  async function applyTestCommand(testCommand: TestCommand) {
+    await submitTextCommand(testCommand.text);
+  }
+
+  async function toggleVoiceInput() {
+    if (audioRecorder.status !== 'recording') {
+      await audioRecorder.startRecording();
+      return;
+    }
+
+    const audio = await audioRecorder.stopRecording();
+
+    if (!audio) {
+      return;
+    }
+
+    setIsRecognizingSpeech(true);
+    setCurrentReply('正在识别语音。');
+
+    try {
+      const response = await recognizeSpeech(audio);
+      await submitTextCommand(response.text);
+    } catch {
+      setCurrentReply('语音识别失败，请确认后端 ASR 配置和服务状态。');
+    } finally {
+      setIsRecognizingSpeech(false);
+    }
+  }
+
   return (
     <MainLayout
       header={<Header />}
@@ -102,6 +135,11 @@ function App() {
           currentText={currentText}
           currentReply={currentReply}
           isLoading={isParsingCommand}
+          isRecording={audioRecorder.status === 'recording'}
+          isRecognizing={isRecognizingSpeech}
+          canRecord={audioRecorder.isSupported}
+          recorderError={audioRecorder.errorMessage}
+          onVoiceToggle={toggleVoiceInput}
           onCommandSelect={applyTestCommand}
         />
       }
