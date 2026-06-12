@@ -8,6 +8,7 @@ type VoicePanelProps<TCommand extends VoicePanelCommand> = {
   commands: TCommand[];
   currentText: string;
   currentReply: string;
+  isLoading: boolean;
   onCommandSelect: (command: TCommand) => void;
 };
 
@@ -15,6 +16,7 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
   commands,
   currentText,
   currentReply,
+  isLoading,
   onCommandSelect,
 }: VoicePanelProps<TCommand>) {
   return (
@@ -24,7 +26,7 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
         <button className="voice-panel__mic" type="button" aria-label="开始语音输入">
           🎙
         </button>
-        <p>点击开始说话</p>
+        <p>{isLoading ? '正在解析指令' : '点击开始说话'}</p>
       </div>
       <div className="voice-panel__section">
         <h3>识别文本</h3>
@@ -40,7 +42,12 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
         <h3>快捷指令（测试用）</h3>
         <div className="voice-panel__quick-actions" aria-label="快捷指令占位">
           {commands.map((command) => (
-            <button key={command.label} type="button" onClick={() => onCommandSelect(command)}>
+            <button
+              key={command.label}
+              type="button"
+              disabled={isLoading}
+              onClick={() => onCommandSelect(command)}
+            >
               {command.label}
             </button>
           ))}

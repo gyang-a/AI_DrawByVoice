@@ -26,6 +26,8 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 │       │   └── VoicePanel/
 │       ├── types/
 │       │   └── drawing.ts
+│       ├── services/
+│       │   └── commandApi.ts
 │       ├── utils/
 │       │   └── executeCommand.ts
 │       ├── index.css
@@ -92,6 +94,8 @@ cp .env.example .env
 
 当前 PR 不接入真实 AI、语音识别或数据库，因此没有必填环境变量。
 
+前端可通过 `VITE_API_BASE_URL` 指定后端地址，默认使用 `http://127.0.0.1:8000`。
+
 ## 技术栈
 
 ### 前端
@@ -133,11 +137,12 @@ cp .env.example .env
 - 前端命令执行器纯函数，绘图命令需携带图形 `id`。
 - 前端 Konva 静态画布渲染。
 - 前端测试按钮模拟绘图命令。
+- 前端接入后端 mock 指令解析接口。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 - 后端 mock 指令解析接口。
+- 后端允许本地前端开发地址跨域访问。
 
 ## 开发计划
 
-1. 前端接入后端 mock 指令解析接口。
-2. 语音识别和语音反馈。
+1. 语音识别和语音反馈。
