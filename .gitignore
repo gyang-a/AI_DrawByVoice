@@ -2,6 +2,7 @@
 node_modules/
 .venv/
 AI_skill.md
+frontend/.vite/
 
 # Build outputs
 dist/

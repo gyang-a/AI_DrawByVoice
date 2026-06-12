@@ -5,6 +5,7 @@
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   background: #ffffff;
+  box-shadow: 0 18px 40px rgba(23, 31, 48, 0.06);
 }
 
 .voice-panel h2,
@@ -27,8 +28,10 @@
 .voice-panel__placeholder {
   min-height: 160px;
   margin: 20px 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
   gap: 12px;
   color: #667085;
   border: 1px dashed #c9d3e2;
@@ -37,10 +40,14 @@
 }
 
 .voice-panel__mic {
-  width: 64px;
-  height: 64px;
+  width: 88px;
+  height: 88px;
+  border: 0;
   border-radius: 50%;
-  background: #4263eb;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4263eb, #7048e8);
+  font-size: 32px;
+  box-shadow: 0 14px 28px rgba(66, 99, 235, 0.28);
 }
 
 .voice-panel__section {
@@ -56,4 +63,29 @@
   color: #667085;
   background: #f5f7fb;
   line-height: 1.6;
+}
+
+.voice-panel__box--reply {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.voice-panel__quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.voice-panel__quick-actions button {
+  min-height: 44px;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  color: #344054;
+  background: #ffffff;
+}
+
+@media (max-width: 360px) {
+  .voice-panel__quick-actions {
+    grid-template-columns: 1fr;
+  }
 }
