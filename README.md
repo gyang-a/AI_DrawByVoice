@@ -24,6 +24,8 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 │       │   ├── Header/
 │       │   ├── MainLayout/
 │       │   └── VoicePanel/
+│       ├── types/
+│       │   └── drawing.ts
 │       ├── index.css
 │       ├── main.tsx
 │       └── vite-env.d.ts
@@ -108,14 +110,14 @@ cp .env.example .env
 - 最小 React + Vite + TypeScript 前端入口。
 - 前端基础布局骨架和职责拆分组件。
 - 前端静态页面内容和基础视觉样式。
+- 前端绘图类型与命令协议。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 
 ## 开发计划
 
-1. 绘图类型与命令协议。
-2. 命令执行器。
-3. Konva 画布渲染。
-4. 测试按钮模拟绘图命令。
-5. 后端 mock / AI 指令解析接口。
-6. 语音识别和语音反馈。
+1. 命令执行器。
+2. Konva 画布渲染。
+3. 测试按钮模拟绘图命令。
+4. 后端 mock / AI 指令解析接口。
+5. 语音识别和语音反馈。
