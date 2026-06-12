@@ -1,5 +1,6 @@
 .canvas-board {
-  min-height: 520px;
+  width: 842px;
+  min-height: 720px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -42,9 +43,11 @@
 }
 
 .canvas-board__surface {
+  width: 800px;
+  height: 600px;
   margin: 18px 0;
-  flex: 1;
-  overflow: auto;
+  flex: 0 0 auto;
+  overflow: hidden;
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   color: #667085;
