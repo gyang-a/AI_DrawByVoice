@@ -56,15 +56,61 @@
   font-size: 13px;
   line-height: 1.7;
   white-space: pre;
+  scrollbar-color: #475467 #1f2937;
+  scrollbar-width: thin;
+}
+
+.command-panel__json::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.command-panel__json::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: #1f2937;
+}
+
+.command-panel__json::-webkit-scrollbar-thumb {
+  border: 2px solid #1f2937;
+  border-radius: 999px;
+  background: #3b76d0;
+}
+
+.command-panel__json::-webkit-scrollbar-thumb:hover {
+  background: #667085;
 }
 
 .command-panel__history {
   display: grid;
   gap: 8px;
+  height: 260px;
+  overflow-y: auto;
   margin: 0;
   list-style: none;
   background: transparent;
   padding: 0;
+  padding-right: 4px;
+  scrollbar-color: #98a2b3 #eef2f7;
+  scrollbar-width: thin;
+}
+
+.command-panel__history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.command-panel__history::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: #eef2f7;
+}
+
+.command-panel__history::-webkit-scrollbar-thumb {
+  border: 2px solid #eef2f7;
+  border-radius: 999px;
+  background: #98a2b3;
+}
+
+.command-panel__history::-webkit-scrollbar-thumb:hover {
+  background: #667085;
 }
 
 .command-panel__history li {
@@ -93,4 +139,5 @@
 .command-panel__history p {
   color: #344054;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
