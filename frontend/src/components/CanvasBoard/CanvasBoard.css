@@ -42,24 +42,19 @@
 }
 
 .canvas-board__surface {
-  min-height: 360px;
   margin: 18px 0;
   flex: 1;
-  display: grid;
-  place-items: center;
+  overflow: auto;
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   color: #667085;
   background: #ffffff;
 }
 
-.canvas-board__sample-shape {
-  width: min(220px, 48vw);
-  aspect-ratio: 1;
-  border: 3px solid #111827;
-  border-radius: 50%;
-  background: #ef233c;
-  box-shadow: inset -20px -24px 42px rgba(127, 29, 29, 0.18);
+.canvas-board__stage {
+  width: 800px;
+  height: 600px;
+  background: #ffffff;
 }
 
 .canvas-board__meta {

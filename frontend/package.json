@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "konva": "^10.3.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-konva": "^19.2.5"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",
