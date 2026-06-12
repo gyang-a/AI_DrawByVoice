@@ -27,7 +27,10 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 │       ├── types/
 │       │   └── drawing.ts
 │       ├── services/
-│       │   └── commandApi.ts
+│       │   ├── commandApi.ts
+│       │   └── speechApi.ts
+│       ├── hooks/
+│       │   └── useAudioRecorder.ts
 │       ├── utils/
 │       │   └── executeCommand.ts
 │       ├── index.css
@@ -43,12 +46,15 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
     │       └── routes/
     │           ├── command.py
     │           ├── __init__.py
-    │           └── health.py
+    │           ├── health.py
+    │           └── speech.py
     ├── schemas/
     │   ├── __init__.py
-    │   └── command.py
+    │   ├── command.py
+    │   └── speech.py
     ├── services/
     │   ├── __init__.py
+    │   ├── asr_service.py
     │   └── command_parser.py
     └── tests/
         └── __init__.py
@@ -84,6 +90,12 @@ Mock 指令解析接口：
 POST /api/commands/parse
 ```
 
+讯飞 ASR 语音识别接口：
+
+```txt
+POST /api/speech/asr
+```
+
 ## 环境变量
 
 复制根目录下的 `.env.example`，按后续阶段需要配置变量。
@@ -92,9 +104,19 @@ POST /api/commands/parse
 cp .env.example .env
 ```
 
-当前 PR 不接入真实 AI、语音识别或数据库，因此没有必填环境变量。
+当前后端 mock 指令解析不依赖真实 AI 或数据库；语音识别需要配置讯飞 ASR 环境变量。
 
 前端可通过 `VITE_API_BASE_URL` 指定后端地址，默认使用 `http://127.0.0.1:8000`。
+
+后端 ASR 使用讯飞语音听写服务，需要配置：
+
+```txt
+XFYUN_APP_ID=
+XFYUN_API_KEY=
+XFYUN_API_SECRET=
+```
+
+将真实值填写到根目录 `.env` 后，后端启动时会自动读取。
 
 ## 技术栈
 
@@ -112,6 +134,7 @@ cp .env.example .env
 - Python 3.12+：后端运行环境。
 - FastAPI 0.136.3：用于构建后端 API。
 - Pydantic 2.13.4：用于后续请求和响应数据校验。
+- websocket-client 1.9.x：用于后端连接讯飞语音听写 WebSocket API。
 
 ## 第三方依赖说明
 
@@ -126,6 +149,7 @@ cp .env.example .env
 | react-konva | 在 React 中使用 Konva 渲染图形 | `frontend/src/components/CanvasBoard/` |
 | fastapi[standard] | 提供 FastAPI 应用和 `fastapi dev` 命令 | `backend/` |
 | pydantic | 后续 API schema 校验 | `backend/` |
+| websocket-client | 连接讯飞 ASR WebSocket 服务 | `backend/app/services/asr_service.py` |
 
 ## 当前已实现功能
 
@@ -138,12 +162,14 @@ cp .env.example .env
 - 前端 Konva 静态画布渲染。
 - 前端测试按钮模拟绘图命令。
 - 前端接入后端 mock 指令解析接口。
+- 前端支持通过麦克风录制 16kHz 单声道 WAV 音频并上传后端识别。
 - 前后端绘图协议支持 SVG path 图形。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 - 后端 mock 指令解析接口。
+- 后端讯飞 ASR 语音识别接口。
 - 后端允许本地前端开发地址跨域访问。
 
 ## 开发计划
 
-1. 语音识别和语音反馈。
+1. 语音反馈。
