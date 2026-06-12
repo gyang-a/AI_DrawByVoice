@@ -24,6 +24,10 @@ const createTestCommands = (): TestCommand[] => [
     text: '画一个蓝色的矩形',
   },
   {
+    label: '画红色爱心',
+    text: '画一个红色的爱心',
+  },
+  {
     label: '撤销',
     text: '撤销上一步',
   },
