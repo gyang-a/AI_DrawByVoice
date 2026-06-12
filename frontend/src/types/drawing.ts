@@ -12,8 +12,6 @@ export type CanvasState = {
 export type BaseShape = {
   id: ShapeId;
   type: ShapeType;
-  x?: number;
-  y?: number;
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
@@ -52,31 +50,30 @@ export type PolygonShape = BaseShape & {
   points: number[];
 };
 
-export type Shape = CircleShape | RectShape | LineShape | TextShape | PolygonShape;
+export type Shape =
+  | CircleShape
+  | RectShape
+  | LineShape
+  | TextShape
+  | PolygonShape;
 
-export type CircleShapeDraft = Omit<CircleShape, 'id'> & { id?: ShapeId };
-export type RectShapeDraft = Omit<RectShape, 'id'> & { id?: ShapeId };
-export type LineShapeDraft = Omit<LineShape, 'id'> & { id?: ShapeId };
-export type TextShapeDraft = Omit<TextShape, 'id'> & { id?: ShapeId };
-export type PolygonShapeDraft = Omit<PolygonShape, 'id'> & { id?: ShapeId };
-
-export type ShapeDraft =
-  | CircleShapeDraft
-  | RectShapeDraft
-  | LineShapeDraft
-  | TextShapeDraft
-  | PolygonShapeDraft;
-
-export type ShapePatch =
-  | Partial<Omit<CircleShape, 'id' | 'type'>>
-  | Partial<Omit<RectShape, 'id' | 'type'>>
-  | Partial<Omit<LineShape, 'id' | 'type'>>
-  | Partial<Omit<TextShape, 'id' | 'type'>>
-  | Partial<Omit<PolygonShape, 'id' | 'type'>>;
+export type ShapePatch = Partial<{
+  x: number;
+  y: number;
+  radius: number;
+  width: number;
+  height: number;
+  points: number[];
+  text: string;
+  fontSize: number;
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+}>;
 
 export type DrawShapeCommand = {
   action: 'drawShape';
-  params: ShapeDraft;
+  shape: Shape;
 };
 
 export type UpdateShapeCommand = {
@@ -94,24 +91,28 @@ export type ClearCanvasCommand = {
   action: 'clearCanvas';
 };
 
-export type UndoCommand = {
-  action: 'undo';
-};
-
 export type BatchCommand = {
   action: 'batch';
-  commands: DrawingCommand[];
+  commands: ExecutableDrawingCommand[];
 };
 
-export type DrawingCommand =
+export type ExecutableDrawingCommand =
   | DrawShapeCommand
   | UpdateShapeCommand
   | DeleteShapeCommand
   | ClearCanvasCommand
-  | UndoCommand
   | BatchCommand;
+
+export type UndoCommand = {
+  action: 'undo';
+};
+
+export type DrawingCommand =
+  | ExecutableDrawingCommand
+  | UndoCommand;
 
 export type CommandResponse = {
   command: DrawingCommand;
   reply: string;
+  recognizedText?: string;
 };
