@@ -19,3 +19,8 @@ export async function recognizeSpeech(audio: Blob): Promise<SpeechRecognitionRes
 
   return response.json() as Promise<SpeechRecognitionResponse>;
 }
+
+export function createSpeechRecognitionSocket(): WebSocket {
+  const wsBaseUrl = API_BASE_URL.replace(/^http/, 'ws');
+  return new WebSocket(`${wsBaseUrl}/api/speech/asr/stream`);
+}
