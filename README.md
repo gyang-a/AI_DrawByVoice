@@ -87,6 +87,8 @@ cp .env.example .env
 - Vite 8.0.16：用于前端开发服务器和构建。
 - TypeScript 6.0.3：用于类型约束。
 - @vitejs/plugin-react 6.0.2：用于 Vite 的 React 支持。
+- Konva 10.3.0：用于 Canvas 图形渲染。
+- react-konva 19.2.5：用于在 React 组件中使用 Konva。
 
 ### 后端
 
@@ -103,6 +105,8 @@ cp .env.example .env
 | vite | 前端开发服务和构建 | `frontend/` |
 | typescript | 提供静态类型检查 | `frontend/` |
 | @vitejs/plugin-react | 支持 React JSX 转换和开发体验 | `frontend/` |
+| konva | Canvas 图形渲染引擎 | `frontend/src/components/CanvasBoard/` |
+| react-konva | 在 React 中使用 Konva 渲染图形 | `frontend/src/components/CanvasBoard/` |
 | fastapi[standard] | 提供 FastAPI 应用和 `fastapi dev` 命令 | `backend/` |
 | pydantic | 后续 API schema 校验 | `backend/` |
 
@@ -114,12 +118,12 @@ cp .env.example .env
 - 前端静态页面内容和基础视觉样式。
 - 前端绘图类型与命令协议。
 - 前端命令执行器纯函数，绘图命令需携带图形 `id`。
+- 前端 Konva 静态画布渲染。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 
 ## 开发计划
 
-1. Konva 画布渲染。
-2. 测试按钮模拟绘图命令。
-3. 后端 mock / AI 指令解析接口。
-4. 语音识别和语音反馈。
+1. 测试按钮模拟绘图命令。
+2. 后端 mock / AI 指令解析接口。
+3. 语音识别和语音反馈。
