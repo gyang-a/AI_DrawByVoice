@@ -4,9 +4,8 @@ import { CommandPanel } from './components/CommandPanel/CommandPanel';
 import { Header } from './components/Header/Header';
 import { MainLayout } from './components/MainLayout/MainLayout';
 import { VoicePanel } from './components/VoicePanel/VoicePanel';
-import { useAudioRecorder } from './hooks/useAudioRecorder';
+import { useStreamingSpeechRecognition } from './hooks/useStreamingSpeechRecognition';
 import { parseCommand } from './services/commandApi';
-import { recognizeSpeech } from './services/speechApi';
 import type { DrawingCommand, ExecutableDrawingCommand, Shape } from './types/drawing';
 import { executeCommand, isExecutableCommand } from './utils/executeCommand';
 import './App.css';
@@ -48,8 +47,18 @@ function App() {
   const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [isParsingCommand, setIsParsingCommand] = useState(false);
-  const [isRecognizingSpeech, setIsRecognizingSpeech] = useState(false);
-  const audioRecorder = useAudioRecorder();
+  const speechRecognition = useStreamingSpeechRecognition({
+    onPartialText: (text) => {
+      setCurrentText(text);
+      setCurrentReply('正在听你说话。');
+    },
+    onFinalText: (text) => {
+      void submitTextCommand(text);
+    },
+    onError: (message) => {
+      setCurrentReply(message);
+    },
+  });
 
   function applyExecutableCommand(command: ExecutableDrawingCommand) {
     setHistory((previousHistory) => [...previousHistory, shapes]);
@@ -102,28 +111,14 @@ function App() {
   }
 
   async function toggleVoiceInput() {
-    if (audioRecorder.status !== 'recording') {
-      await audioRecorder.startRecording();
+    if (speechRecognition.status === 'idle') {
+      setCurrentReply('正在实时监听，说完后会自动识别。');
+      await speechRecognition.startListening();
       return;
     }
 
-    const audio = await audioRecorder.stopRecording();
-
-    if (!audio) {
-      return;
-    }
-
-    setIsRecognizingSpeech(true);
-    setCurrentReply('正在识别语音。');
-
-    try {
-      const response = await recognizeSpeech(audio);
-      await submitTextCommand(response.text);
-    } catch {
-      setCurrentReply('语音识别失败，请确认后端 ASR 配置和服务状态。');
-    } finally {
-      setIsRecognizingSpeech(false);
-    }
+    speechRecognition.stopListening();
+    setCurrentReply('已关闭实时语音监听。');
   }
 
   return (
@@ -135,10 +130,10 @@ function App() {
           currentText={currentText}
           currentReply={currentReply}
           isLoading={isParsingCommand}
-          isRecording={audioRecorder.status === 'recording'}
-          isRecognizing={isRecognizingSpeech}
-          canRecord={audioRecorder.isSupported}
-          recorderError={audioRecorder.errorMessage}
+          isRecording={speechRecognition.status === 'listening'}
+          isRecognizing={speechRecognition.status === 'connecting' || speechRecognition.status === 'recognizing'}
+          canRecord={speechRecognition.isSupported}
+          recorderError={speechRecognition.errorMessage}
           onVoiceToggle={toggleVoiceInput}
           onCommandSelect={applyTestCommand}
         />

@@ -94,6 +94,7 @@ POST /api/commands/parse
 
 ```txt
 POST /api/speech/asr
+WebSocket /api/speech/asr/stream
 ```
 
 ## 环境变量
@@ -162,12 +163,13 @@ XFYUN_API_SECRET=
 - 前端 Konva 静态画布渲染。
 - 前端测试按钮模拟绘图命令。
 - 前端接入后端 mock 指令解析接口。
-- 前端支持通过麦克风录制 16kHz 单声道 WAV 音频并上传后端识别。
+- 前端支持通过麦克风实时采集 16kHz PCM 分片，并通过 WebSocket 发送到后端流式识别。
+- 前端支持本地静音检测，说完后自动结束当前语音句子并提交绘图指令。
 - 前后端绘图协议支持 SVG path 图形。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 - 后端 mock 指令解析接口。
-- 后端讯飞 ASR 语音识别接口。
+- 后端讯飞 ASR HTTP 识别接口和 WebSocket 流式识别接口。
 - 后端允许本地前端开发地址跨域访问。
 
 ## 开发计划

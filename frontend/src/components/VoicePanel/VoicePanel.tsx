@@ -30,16 +30,17 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
   onCommandSelect,
 }: VoicePanelProps<TCommand>) {
   const voiceStatus = getVoiceStatus(isLoading, isRecording, isRecognizing, canRecord, recorderError);
+  const isVoiceActive = isRecording || isRecognizing;
 
   return (
     <section className="voice-panel" aria-labelledby="voice-panel-title">
       <h2 id="voice-panel-title">语音控制</h2>
-      <div className={`voice-panel__placeholder${isRecording ? ' voice-panel__placeholder--active' : ''}`}>
+      <div className={`voice-panel__placeholder${isVoiceActive ? ' voice-panel__placeholder--active' : ''}`}>
         <button
           className="voice-panel__mic"
           type="button"
-          aria-label={isRecording ? '停止语音输入' : '开始语音输入'}
-          disabled={!canRecord || isLoading || isRecognizing}
+          aria-label={isVoiceActive ? '关闭实时语音监听' : '开启实时语音监听'}
+          disabled={!canRecord}
           onClick={onVoiceToggle}
         >
           🎙
@@ -91,11 +92,11 @@ function getVoiceStatus(
   }
 
   if (isRecording) {
-    return '正在录音，再次点击结束';
+    return '正在实时监听，说完会自动识别';
   }
 
   if (isRecognizing) {
-    return '正在识别语音';
+    return '正在确认本句指令';
   }
 
   if (isLoading) {
