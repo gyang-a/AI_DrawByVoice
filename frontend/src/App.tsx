@@ -81,7 +81,7 @@ function App() {
     setCurrentReply('正在解析指令。');
     setCurrentCommand(null);
     setIsParsingCommand(true);
-    setCommandHistory((previousHistory) => [text, ...previousHistory].slice(0, 5));
+    setCommandHistory((previousHistory) => [text, ...previousHistory]);
 
     try {
       const response = await parseCommand({
