@@ -39,8 +39,15 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
     │   └── api/
     │       ├── __init__.py
     │       └── routes/
+    │           ├── command.py
     │           ├── __init__.py
     │           └── health.py
+    ├── schemas/
+    │   ├── __init__.py
+    │   └── command.py
+    ├── services/
+    │   ├── __init__.py
+    │   └── command_parser.py
     └── tests/
         └── __init__.py
 ```
@@ -67,6 +74,12 @@ uv run fastapi dev app/main.py
 
 ```txt
 GET /api/health
+```
+
+Mock 指令解析接口：
+
+```txt
+POST /api/commands/parse
 ```
 
 ## 环境变量
@@ -122,8 +135,9 @@ cp .env.example .env
 - 前端测试按钮模拟绘图命令。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
+- 后端 mock 指令解析接口。
 
 ## 开发计划
 
-1. 后端 mock / AI 指令解析接口。
+1. 前端接入后端 mock 指令解析接口。
 2. 语音识别和语音反馈。
