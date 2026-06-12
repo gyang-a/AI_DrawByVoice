@@ -6,6 +6,7 @@
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   background: #ffffff;
+  box-shadow: 0 18px 40px rgba(23, 31, 48, 0.06);
 }
 
 .canvas-board__header,
@@ -31,11 +32,12 @@
   gap: 8px;
 }
 
-.canvas-board__tools span {
+.canvas-board__tools button {
   width: 32px;
   height: 32px;
   border: 1px solid #dfe5ef;
   border-radius: 8px;
+  color: #344054;
   background: #f8fafc;
 }
 
@@ -49,6 +51,15 @@
   border-radius: 8px;
   color: #667085;
   background: #ffffff;
+}
+
+.canvas-board__sample-shape {
+  width: min(220px, 48vw);
+  aspect-ratio: 1;
+  border: 3px solid #111827;
+  border-radius: 50%;
+  background: #ef233c;
+  box-shadow: inset -20px -24px 42px rgba(127, 29, 29, 0.18);
 }
 
 .canvas-board__meta {

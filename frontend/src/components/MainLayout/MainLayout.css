@@ -14,7 +14,7 @@
   margin: 0 auto;
   padding: 24px;
   display: grid;
-  grid-template-columns: minmax(240px, 320px) minmax(420px, 1fr) minmax(240px, 320px);
+  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr) minmax(280px, 340px);
   gap: 24px;
   flex: 1;
 }

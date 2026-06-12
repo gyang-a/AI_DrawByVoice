@@ -5,6 +5,7 @@
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   background: #ffffff;
+  box-shadow: 0 18px 40px rgba(23, 31, 48, 0.06);
 }
 
 .command-panel h2,
@@ -30,7 +31,9 @@
   margin-top: 20px;
 }
 
-.command-panel__box {
+.command-panel__box,
+.command-panel__json,
+.command-panel__history {
   min-height: 56px;
   padding: 14px;
   border-radius: 8px;
@@ -39,6 +42,50 @@
   line-height: 1.6;
 }
 
-.command-panel__box--large {
-  min-height: 160px;
+.command-panel__json {
+  overflow: auto;
+  margin: 0;
+  min-height: 220px;
+  color: #f8fafc;
+  background: #111827;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.command-panel__history {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  list-style: none;
+  background: transparent;
+  padding: 0;
+}
+
+.command-panel__history li {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f7fb;
+}
+
+.command-panel__history span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #4263eb;
+  background: #e7f0ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.command-panel__history p {
+  color: #344054;
+  line-height: 1.5;
 }

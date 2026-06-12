@@ -1,5 +1,5 @@
 .header {
-  height: 72px;
+  min-height: 72px;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -19,9 +19,23 @@
 .header__mark {
   width: 36px;
   height: 36px;
+  display: grid;
+  place-items: center;
   flex: 0 0 auto;
   border-radius: 8px;
-  background: linear-gradient(135deg, #4263eb, #20c997);
+  background: #fff1d6;
+}
+
+.header__mark span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, #ef4444 0 3px, transparent 4px),
+    radial-gradient(circle at 68% 30%, #22c55e 0 3px, transparent 4px),
+    radial-gradient(circle at 35% 70%, #3b82f6 0 3px, transparent 4px),
+    radial-gradient(circle at 72% 70%, #f59e0b 0 3px, transparent 4px),
+    #f8fafc;
 }
 
 .header__name,
@@ -41,7 +55,15 @@
   font-size: 14px;
 }
 
-.header__status {
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.header__status,
+.header__voice-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -55,11 +77,44 @@
   white-space: nowrap;
 }
 
+.header__voice-toggle {
+  border-color: transparent;
+  background: transparent;
+}
+
 .header__status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #37b24d;
+}
+
+.header__switch {
+  width: 44px;
+  height: 24px;
+  position: relative;
+  border-radius: 999px;
+  background: #4263eb;
+}
+
+.header__switch::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.header__icon-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  color: #344054;
+  background: #ffffff;
 }
 
 @media (max-width: 640px) {
@@ -68,5 +123,12 @@
     padding: 16px;
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .header__actions {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 }
