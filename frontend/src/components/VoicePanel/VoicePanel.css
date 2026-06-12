@@ -1,0 +1,59 @@
+.voice-panel {
+  height: 100%;
+  min-height: 520px;
+  padding: 20px;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.voice-panel h2,
+.voice-panel h3,
+.voice-panel p {
+  margin: 0;
+}
+
+.voice-panel h2 {
+  color: #182033;
+  font-size: 18px;
+}
+
+.voice-panel h3 {
+  color: #344054;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.voice-panel__placeholder {
+  min-height: 160px;
+  margin: 20px 0;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  color: #667085;
+  border: 1px dashed #c9d3e2;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.voice-panel__mic {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #4263eb;
+}
+
+.voice-panel__section {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.voice-panel__box {
+  min-height: 56px;
+  padding: 14px;
+  border-radius: 8px;
+  color: #667085;
+  background: #f5f7fb;
+  line-height: 1.6;
+}
