@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-ShapeType = Literal["circle", "rect", "line", "text", "polygon"]
+ShapeType = Literal["circle", "rect", "line", "text", "polygon", "path"]
 
 
 class BaseShape(BaseModel):
@@ -49,7 +49,12 @@ class PolygonShape(BaseShape):
     points: list[float]
 
 
-Shape = CircleShape | RectShape | LineShape | TextShape | PolygonShape
+class PathShape(BaseShape):
+    type: Literal["path"]
+    data: str
+
+
+Shape = CircleShape | RectShape | LineShape | TextShape | PolygonShape | PathShape
 
 
 class ShapePatch(BaseModel):
@@ -59,6 +64,7 @@ class ShapePatch(BaseModel):
     width: float | None = None
     height: float | None = None
     points: list[float] | None = None
+    data: str | None = None
     text: str | None = None
     fontSize: int | None = None
     fill: str | None = None

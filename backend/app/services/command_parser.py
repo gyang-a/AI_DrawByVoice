@@ -5,6 +5,7 @@ from app.schemas.command import (
     ClearCanvasCommand,
     DrawShapeCommand,
     ParseCommandResponse,
+    PathShape,
     RectShape,
     Shape,
     ShapePatch,
@@ -64,6 +65,28 @@ def parse_mock_command(text: str, scene: list[Shape]) -> ParseCommandResponse:
                 ),
             ),
             reply="好的，已为你画一个蓝色的矩形。",
+            recognizedText=normalized_text,
+        )
+
+    if "爱心" in normalized_text or "心形" in normalized_text or "heart" in normalized_text.lower():
+        return ParseCommandResponse(
+            command=DrawShapeCommand(
+                action="drawShape",
+                shape=PathShape(
+                    id=_create_shape_id(),
+                    type="path",
+                    data=(
+                        "M400 520 C250 390 180 300 220 220 "
+                        "C250 160 330 160 400 240 "
+                        "C470 160 550 160 580 220 "
+                        "C620 300 550 390 400 520 Z"
+                    ),
+                    fill="#ef233c",
+                    stroke="#991b1b",
+                    strokeWidth=2,
+                ),
+            ),
+            reply="好的，已为你画一个红色的爱心。",
             recognizedText=normalized_text,
         )
 

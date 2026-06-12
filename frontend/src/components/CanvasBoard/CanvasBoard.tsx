@@ -1,4 +1,4 @@
-import { Circle, Layer, Line, Rect, Stage, Text } from 'react-konva';
+import { Circle, Layer, Line, Path, Rect, Stage, Text } from 'react-konva';
 import type { Shape } from '../../types/drawing';
 import './CanvasBoard.css';
 
@@ -67,6 +67,17 @@ function renderShape(shape: Shape) {
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
           closed
+        />
+      );
+
+    case 'path':
+      return (
+        <Path
+          key={shape.id}
+          data={shape.data}
+          fill={shape.fill}
+          stroke={shape.stroke}
+          strokeWidth={shape.strokeWidth}
         />
       );
   }

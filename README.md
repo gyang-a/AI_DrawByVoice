@@ -138,6 +138,7 @@ cp .env.example .env
 - 前端 Konva 静态画布渲染。
 - 前端测试按钮模拟绘图命令。
 - 前端接入后端 mock 指令解析接口。
+- 前后端绘图协议支持 SVG path 图形。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 - 后端 mock 指令解析接口。

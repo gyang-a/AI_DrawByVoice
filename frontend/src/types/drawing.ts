@@ -1,4 +1,4 @@
-export type ShapeType = 'circle' | 'rect' | 'line' | 'text' | 'polygon';
+export type ShapeType = 'circle' | 'rect' | 'line' | 'text' | 'polygon' | 'path';
 
 export type ShapeId = string;
 
@@ -50,12 +50,18 @@ export type PolygonShape = BaseShape & {
   points: number[];
 };
 
+export type PathShape = BaseShape & {
+  type: 'path';
+  data: string;
+};
+
 export type Shape =
   | CircleShape
   | RectShape
   | LineShape
   | TextShape
-  | PolygonShape;
+  | PolygonShape
+  | PathShape;
 
 export type ShapePatch = Partial<{
   x: number;
@@ -64,6 +70,7 @@ export type ShapePatch = Partial<{
   width: number;
   height: number;
   points: number[];
+  data: string;
   text: string;
   fontSize: number;
   fill: string;
