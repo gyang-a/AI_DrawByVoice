@@ -6,7 +6,6 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 
 ```txt
 .
-├── AI_skill.md
 ├── README.md
 ├── .env.example
 ├── .gitignore
@@ -19,6 +18,12 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 │   └── src/
 │       ├── App.css
 │       ├── App.tsx
+│       ├── components/
+│       │   ├── CanvasBoard/
+│       │   ├── CommandPanel/
+│       │   ├── Header/
+│       │   ├── MainLayout/
+│       │   └── VoicePanel/
 │       ├── index.css
 │       ├── main.tsx
 │       └── vite-env.d.ts
@@ -101,12 +106,13 @@ cp .env.example .env
 
 - 前后端同仓库目录结构。
 - 最小 React + Vite + TypeScript 前端入口。
+- 前端基础布局骨架和职责拆分组件。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
 
 ## 开发计划
 
-1. 基础页面布局。
+1. 完善静态页面内容和视觉样式。
 2. 绘图类型与命令协议。
 3. 命令执行器。
 4. Konva 画布渲染。

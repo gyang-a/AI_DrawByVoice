@@ -1,0 +1,44 @@
+.command-panel {
+  height: 100%;
+  min-height: 520px;
+  padding: 20px;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.command-panel h2,
+.command-panel h3,
+.command-panel p {
+  margin: 0;
+}
+
+.command-panel h2 {
+  color: #182033;
+  font-size: 18px;
+}
+
+.command-panel h3 {
+  color: #344054;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.command-panel__section {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.command-panel__box {
+  min-height: 56px;
+  padding: 14px;
+  border-radius: 8px;
+  color: #667085;
+  background: #f5f7fb;
+  line-height: 1.6;
+}
+
+.command-panel__box--large {
+  min-height: 160px;
+}
