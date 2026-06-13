@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from app.schemas.command import (
+    CanvasItem,
     CircleShape,
     ClearCanvasCommand,
     DrawShapeCommand,
@@ -15,7 +16,7 @@ from app.schemas.command import (
 from app.services.drawing_agent import is_drawing_agent_enabled, parse_command_with_agent
 
 
-def parse_command(text: str, scene: list[Shape], thread_id: str) -> ParseCommandResponse:
+def parse_command(text: str, scene: list[CanvasItem], thread_id: str) -> ParseCommandResponse:
     if not is_drawing_agent_enabled():
         response = parse_mock_command(text, scene)
         response.reply = f"[mock] {response.reply}"
@@ -24,7 +25,7 @@ def parse_command(text: str, scene: list[Shape], thread_id: str) -> ParseCommand
     return parse_command_with_agent(text, scene, thread_id)
 
 
-def parse_mock_command(text: str, scene: list[Shape]) -> ParseCommandResponse:
+def parse_mock_command(text: str, scene: list[CanvasItem]) -> ParseCommandResponse:
     # 这里先用规则模拟 AI 输出，保证接口形状和前端命令协议先跑通。
     # 真正的大模型解析会在后续 PR 放到独立 llm_client / parser 服务中。
     normalized_text = text.strip()
@@ -124,9 +125,9 @@ def _create_shape_id() -> str:
     return f"shape_{uuid4().hex}"
 
 
-def _find_latest_shape(scene: list[Shape], shape_type: str) -> Shape | None:
-    for shape in reversed(scene):
-        if shape.type == shape_type:
-            return shape
+def _find_latest_shape(scene: list[CanvasItem], shape_type: str) -> Shape | None:
+    for item in reversed(scene):
+        if isinstance(item, Shape) and item.type == shape_type:
+            return item
 
     return None

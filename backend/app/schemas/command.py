@@ -58,6 +58,26 @@ class PathShape(BaseShape):
 Shape = CircleShape | RectShape | LineShape | TextShape | PolygonShape | PathShape
 
 
+class SvgPart(BaseModel):
+    part: str
+    svg: str
+
+
+class SvgCanvasItem(BaseModel):
+    id: str
+    kind: Literal["svg"]
+    svg: str
+    viewBox: str | None = None
+    parts: list[SvgPart] | None = None
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+CanvasItem = Shape | SvgCanvasItem
+
+
 class ShapePatch(BaseModel):
     x: float | None = None
     y: float | None = None
@@ -81,11 +101,20 @@ class DrawShapeCommand(BaseModel):
 class DrawSvgCommand(BaseModel):
     action: Literal["drawSvg"]
     id: str | None = None
-    svg: str
+    svg: str | None = None
+    viewBox: str | None = None
+    parts: list[SvgPart] | None = None
     x: float
     y: float
     width: float
     height: float
+
+    @model_validator(mode="after")
+    def validate_svg_content(self) -> DrawSvgCommand:
+        if not self.svg and not self.parts:
+            raise ValueError("drawSvg requires either svg or parts")
+
+        return self
 
 
 class UpdateShapeCommand(BaseModel):
@@ -144,7 +173,7 @@ def _get_batch_depth(command: ExecutableDrawingCommand) -> int:
 
 class ParseCommandRequest(BaseModel):
     text: str = Field(min_length=1)
-    scene: list[Shape] = Field(default_factory=list)
+    scene: list[CanvasItem] = Field(default_factory=list)
     threadId: str = "default-canvas"
 
 

@@ -9,18 +9,18 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, WebSocket, WebSo
 from starlette.websockets import WebSocketState
 from pydantic import TypeAdapter
 
-from app.schemas.command import Shape
+from app.schemas.command import CanvasItem
 from app.schemas.speech import SpeechRecognitionResponse
 from app.services.asr_service import recognize_audio_file, recognize_pcm_audio
 from app.services.command_parser import parse_command as parse_command_service
 
 router = APIRouter(tags=["speech"])
 
-AUDIO_RMS_THRESHOLD = 2000
+AUDIO_RMS_THRESHOLD = 2300
 SILENCE_TIMEOUT_SECONDS = 1.20
 MIN_UTTERANCE_BYTES = 16000
 PRE_SPEECH_BYTES = 16000
-shape_list_adapter = TypeAdapter(list[Shape])
+canvas_item_list_adapter = TypeAdapter(list[CanvasItem])
 
 
 @router.post("/asr", response_model=SpeechRecognitionResponse)
@@ -32,14 +32,14 @@ def recognize_speech(audio: UploadFile = File(...)) -> SpeechRecognitionResponse
 @router.websocket("/asr/stream")
 async def stream_recognize_speech(websocket: WebSocket) -> None:
     await websocket.accept()
-    scene: list[Shape] = []
+    scene: list[CanvasItem] = []
     thread_id = "default-canvas"
     utterance_buffer = bytearray()
     pre_speech_buffer = bytearray()
     has_speech = False
     last_speech_at = 0.0
     send_lock = asyncio.Lock()
-    utterance_queue: asyncio.Queue[tuple[bytes, list[Shape], str] | None] = asyncio.Queue()
+    utterance_queue: asyncio.Queue[tuple[bytes, list[CanvasItem], str] | None] = asyncio.Queue()
 
     async def send_event(event: dict) -> None:
         if websocket.client_state != WebSocketState.CONNECTED:
@@ -51,7 +51,7 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
 
             await websocket.send_json(event)
 
-    async def process_utterance(audio_bytes: bytes, current_scene: list[Shape], current_thread_id: str) -> None:
+    async def process_utterance(audio_bytes: bytes, current_scene: list[CanvasItem], current_thread_id: str) -> None:
         try:
             await send_event({"type": "recognizing", "text": ""})
             recognized_text = await asyncio.to_thread(recognize_pcm_audio, audio_bytes)
@@ -150,7 +150,7 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
 
                 event = json.loads(text_message)
                 if event.get("type") == "scene":
-                    scene = shape_list_adapter.validate_python(event.get("scene", []))
+                    scene = canvas_item_list_adapter.validate_python(event.get("scene", []))
                     thread_id = str(event.get("threadId") or thread_id)
             except Exception:
                 continue
