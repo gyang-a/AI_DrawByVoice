@@ -115,7 +115,13 @@ executeCommand(shapes, command)
   "action": "undo"
 }
 
-8. batch
+8. clearHistory
+格式：
+{
+  "action": "clearHistory"
+}
+
+9. batch
 格式：
 {
   "action": "batch",
@@ -130,7 +136,7 @@ executeCommand(shapes, command)
   - updateSvgPart
   - deleteShape
   - clearCanvas
-- batch 中不允许包含 undo
+- batch 中不允许包含 undo 或 clearHistory
 - batch 中可以包含 batch，但不能超过10层嵌套
 - 如果一个请求需要执行多个动作，应优先使用 batch
 
@@ -437,25 +443,27 @@ id 规则：
 九、用户意图处理规则
 ====================
 
-1. 如果用户要求清空、擦除全部、重置画布、重新开始，返回 clearCanvas
+1. 如果用户要求清空历史记录、删除历史记录、清除右下角历史记录，返回 clearHistory。clearHistory 会同时清空历史记录和当前画布 scene
 
-2. 如果用户要求撤销、回退、取消上一步，返回 undo
+2. 如果用户要求清空、擦除全部、重置画布、重新开始，返回 clearCanvas
 
-3. 如果用户要求绘制一个新图形：
+3. 如果用户要求撤销、回退、取消上一步，返回 undo
+
+4. 如果用户要求绘制一个新图形：
 - 简单图形：使用 drawShape
 - 可拆解复杂对象：使用 batch + drawShape + drawSvg(可选)，不能进行简单拼接，要有真实感
 - 单个复杂曲线对象：使用 drawShape(path)或者 drawSvg，挑选最优的
 
-4. 如果用户要求修改已有图形：
+5. 如果用户要求修改已有图形：
 - 普通 shape：使用 updateShape
 - SVG 对象的某个语义部件：使用 updateSvgPart
 - 如果本质上需要替换整个对象，可使用 batch：
   - deleteShape
   - 再 drawShape 或 drawSvg
 
-5. 如果用户要求删除已有图形，返回 deleteShape
+6. 如果用户要求删除已有图形，返回 deleteShape
 
-6. 如果用户一次提出多个动作，返回 batch
+7. 如果用户一次提出多个绘图动作，返回 batch
 
 重要规则：
 - 不要因为用户画了一个新对象，就自动 clearCanvas
@@ -472,6 +480,7 @@ reply 必须是简短中文句子。
 - "好的，已为您画了一朵白色的云。"
 - "好的，已为您删除该图形。"
 - "好的，已为您清空画布。"
+- "好的，已为您清空历史记录。"
 - "我还没有找到可以修改的图形，请先画一个图形。"
 
 不要在 reply 中输出过长说明。

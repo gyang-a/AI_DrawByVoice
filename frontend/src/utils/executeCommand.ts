@@ -1,5 +1,6 @@
 import type {
   CanvasItem,
+  ClearHistoryCommand,
   DrawingCommand,
   ExecutableDrawingCommand,
   ShapeId,
@@ -140,5 +141,11 @@ export function executeCommand(
 export function isExecutableCommand(
   command: DrawingCommand,
 ): command is ExecutableDrawingCommand {
-  return command.action !== 'undo';
+  return command.action !== 'undo' && command.action !== 'clearHistory';
+}
+
+export function isClearHistoryCommand(
+  command: DrawingCommand,
+): command is ClearHistoryCommand {
+  return command.action === 'clearHistory';
 }

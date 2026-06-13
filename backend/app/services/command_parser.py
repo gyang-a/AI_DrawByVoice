@@ -4,6 +4,7 @@ from app.schemas.command import (
     CanvasItem,
     CircleShape,
     ClearCanvasCommand,
+    ClearHistoryCommand,
     DrawShapeCommand,
     ParseCommandResponse,
     PathShape,
@@ -34,6 +35,13 @@ def parse_mock_command(text: str, scene: list[CanvasItem]) -> ParseCommandRespon
         return ParseCommandResponse(
             command=UndoCommand(action="undo"),
             reply="已撤销上一步操作。",
+            recognizedText=normalized_text,
+        )
+
+    if "历史记录" in normalized_text or "history" in normalized_text.lower():
+        return ParseCommandResponse(
+            command=ClearHistoryCommand(action="clearHistory"),
+            reply="历史记录和画布已清空。",
             recognizedText=normalized_text,
         )
 
