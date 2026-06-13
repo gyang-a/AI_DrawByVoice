@@ -55,10 +55,17 @@ export type PathShape = BaseShape & {
   data: string;
 };
 
+export type SvgPart = {
+  part: string;
+  svg: string;
+};
+
 export type SvgCanvasItem = {
   id: ShapeId;
   kind: 'svg';
   svg: string;
+  viewBox?: string;
+  parts?: SvgPart[];
   x: number;
   y: number;
   width: number;
@@ -98,7 +105,9 @@ export type DrawShapeCommand = {
 export type DrawSvgCommand = {
   action: 'drawSvg';
   id?: ShapeId;
-  svg: string;
+  svg?: string;
+  viewBox?: string;
+  parts?: SvgPart[];
   x: number;
   y: number;
   width: number;

@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr, ValidationError
 
-from app.schemas.command import BatchCommand, ParseCommandResponse, Shape
+from app.schemas.command import BatchCommand, CanvasItem, ParseCommandResponse
 
 
 MAX_MODEL_PARSE_ATTEMPTS = 3
@@ -71,6 +71,8 @@ executeCommand(shapes, command)
   "action": "drawSvg",
   "id": string,
   "svg": string,
+  "viewBox": string,
+  "parts": SvgPart[],
   "x": number,
   "y": number,
   "width": number,
@@ -220,6 +222,8 @@ drawSvg 用于表示一个完整的 SVG 矢量对象。
   "action": "drawSvg",
   "id": string,
   "svg": string,
+  "viewBox": string,
+  "parts": SvgPart[],
   "x": number,
   "y": number,
   "width": number,
@@ -228,13 +232,18 @@ drawSvg 用于表示一个完整的 SVG 矢量对象。
 
 规则如下：
 - id 必须存在，且必须唯一，不允许为 null
-- svg 必须是完整、合法、可渲染的 SVG 字符串
-- svg 必须包含 <svg> 根标签
+- svg 和 parts 至少必须提供一个
+- svg 如果存在，必须是完整、合法、可渲染的 SVG 字符串，并包含 <svg> 根标签
+- parts 如果存在，必须是语义化 SVG 片段数组，格式为：{"part": "左翼", "svg": "<path .../>"}
+- parts 中每个 part 必须用自然语言描述该片段语义，例如 "主体机身"、"左眼"、"登录按钮文字"
+- parts 中每个 svg 只返回对应片段，不要包裹完整 <svg> 根标签
+- viewBox 用于描述 parts 的坐标系统，例如 "0 0 200 200"
 - x / y 表示该 SVG 在画布上的左上角位置
 - width / height 表示该 SVG 在画布上的渲染尺寸
 - 不要在 drawSvg 中再附加 fill、stroke、strokeWidth 作为顶层字段
 - drawSvg 适合高复杂度、完整矢量素材
 - 不要滥用 drawSvg
+- 复杂 SVG 推荐使用 parts，这样后续 scene 中会保留每个部件的语义，便于继续修改
 
 如果一个复杂对象可以通过 batch + drawShape 或 drawShape(path) 清楚表达，应优先使用那些方式，而不是 drawSvg。
 
@@ -340,7 +349,7 @@ id 规则：
 - 机器人：circle/rect 头部 + rect 身体 + circle 眼睛 + line 手脚
 - 流程图：多个 rect/text/line 组合
 
-3. 对于明显曲线、不规则轮廓、但仍然是单个主体的图形，优先使用 drawShape，且 shape.type = "path"
+3. 对于明显曲线、不规则轮廓、但仍然是单个主体的图形，优先使用 drawShape，且 shape.type = "path"，如果比较复杂，使用 drawShape(path) + drawSvg
 适用对象例如：
 - 爱心
 - 云朵
@@ -351,15 +360,13 @@ id 规则：
 - 简单图标轮廓
 - 曲线形状
 
-4. 只有当对象属于高复杂度完整矢量素材，且不适合用基础 shape、batch 或 path 清楚表达时，才使用 drawSvg
+4. 当对象属于高复杂度完整矢量素材，且不适合用基础 shape、batch 或 path 清楚表达时，才使用 drawSvg
 适用对象例如：
 - 高复杂度矢量图标
 - 多层完整矢量插画
 - 标准化 SVG 素材
 - 难以拆解的完整复杂矢量图案
-
-5. 不要滥用 drawSvg
-如果对象可以通过 batch + drawShape 或 path 清楚表达，应优先使用这些方式，以提高可编辑性。
+-人物、动物、植物等自然形态的复杂图形
 
 6. 不允许返回 Canvas JavaScript 代码
 不允许返回函数
@@ -404,9 +411,8 @@ id 规则：
 
 3. 如果用户要求绘制一个新图形：
 - 简单图形：使用 drawShape
-- 可拆解复杂对象：使用 batch + drawShape
-- 单个复杂曲线对象：使用 drawShape(path)
-- 高复杂完整矢量对象：使用 drawSvg
+- 可拆解复杂对象：使用 batch + drawShape + drawSvg(可选)，不能进行简单拼接，要有真实感
+- 单个复杂曲线对象：使用 drawShape(path)或者 drawSvg，挑选最优的
 
 4. 如果用户要求修改已有图形：
 - 普通 shape：使用 updateShape
@@ -531,17 +537,43 @@ reply 必须是简短中文句子。
 
 示例4：drawSvg
 {
-  "recognizedText": "画一个复杂的矢量图标",
+  "recognizedText": "画一个火箭",
   "command": {
     "action": "drawSvg",
-    "id": "shape_svg_001",
-    "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='#3b82f6' stroke='#111827' stroke-width='2'/></svg>",
-    "x": 350,
-    "y": 250,
-    "width": 100,
-    "height": 100
+    "id": "shape_rocket_001",
+    "viewBox": "0 0 200 200",
+    "parts": [
+      {
+        "part": "主体机身",
+        "svg": "<path d='M100 20 L130 80 L130 140 L100 170 L70 140 L70 80 Z' fill='#4285F4' stroke='#202124' stroke-width='3'/>"
+      },
+      {
+        "part": "机头",
+        "svg": "<path d='M100 20 L85 50 L115 50 Z' fill='#EA4335' stroke='#202124' stroke-width='2'/>"
+      },
+      {
+        "part": "舷窗",
+        "svg": "<circle cx='100' cy='90' r='18' fill='#81D4FA' stroke='#202124' stroke-width='2'/>"
+      },
+      {
+        "part": "左翼",
+        "svg": "<path d='M70 80 L30 100 L70 110 Z' fill='#FBBC05' stroke='#202124' stroke-width='2'/>"
+      },
+      {
+        "part": "右翼",
+        "svg": "<path d='M130 80 L170 100 L130 110 Z' fill='#FBBC05' stroke='#202124' stroke-width='2'/>"
+      },
+      {
+        "part": "喷射火焰",
+        "svg": "<path d='M85 140 L100 185 L115 140' fill='#FF9800' stroke='#F57C00' stroke-width='2'/>"
+      }
+    ],
+    "x": 300,
+    "y": 160,
+    "width": 200,
+    "height": 200
   },
-  "reply": "好的，已为您绘制矢量图形。"
+  "reply": "好的，已为您绘制火箭。"
 }
 
 示例5：明确要求清空后再画
@@ -573,7 +605,7 @@ reply 必须是简短中文句子。
 
 def parse_command_with_agent(
     text: str,
-    scene: list[Shape],
+    scene: list[CanvasItem],
     thread_id: str,
 ) -> ParseCommandResponse:
     model_name = os.getenv("DRAWING_MODEL")
@@ -586,6 +618,9 @@ def parse_command_with_agent(
     user_message = (
         f"User request: {text}\n\n"
         f"Current scene JSON: {scene_json}\n\n"
+        "Scene items with a type field are basic shapes. "
+        "Scene items with kind='svg' are SVG canvas items; their parts field describes semantic SVG fragments. "
+        "Use updateShape with their targetId to move or resize them, and use deleteShape plus drawSvg to replace SVG content.\n\n"
         f"If a new shape id is needed, use this id seed: shape_{uuid4().hex}"
     )
     messages = [

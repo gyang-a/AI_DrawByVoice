@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createSpeechRecognitionSocket } from '../services/speechApi';
-import type { CommandResponse, Shape } from '../types/drawing';
+import type { CanvasItem, CommandResponse } from '../types/drawing';
 
 const TARGET_SAMPLE_RATE = 16000;
 
@@ -20,7 +20,7 @@ type SpeechSocketMessage =
   | { type: 'error'; text: string };
 
 type StreamingSpeechRecognitionOptions = {
-  scene: Shape[];
+  scene: CanvasItem[];
   threadId: string;
   onRecognizedText: (text: string) => void;
   onCommand: (response: CommandResponse) => void;

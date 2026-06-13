@@ -4,6 +4,7 @@ import type {
   ExecutableDrawingCommand,
   ShapeId,
   ShapePatch,
+  SvgPart,
 } from '../types/drawing';
 
 const MAX_BATCH_DEPTH = 4;
@@ -12,6 +13,13 @@ function compactShapePatch(params: ShapePatch): ShapePatch {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== null && value !== undefined),
   ) as ShapePatch;
+}
+
+function buildSvgFromParts(parts: SvgPart[], width: number, height: number, viewBox?: string): string {
+  const resolvedViewBox = viewBox ?? `0 0 ${width} ${height}`;
+  const content = parts.map((part) => part.svg).join('\n');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${resolvedViewBox}">\n${content}\n</svg>`;
 }
 
 function updateShape(
@@ -45,12 +53,18 @@ export function executeCommand(
       return [...shapes, command.shape];
 
     case 'drawSvg':
+      if (!command.svg && !command.parts?.length) {
+        return shapes;
+      }
+
       return [
         ...shapes,
         {
           id: command.id ?? crypto.randomUUID(),
           kind: 'svg',
-          svg: command.svg,
+          svg: command.svg ?? buildSvgFromParts(command.parts ?? [], command.width, command.height, command.viewBox),
+          viewBox: command.viewBox,
+          parts: command.parts,
           x: command.x,
           y: command.y,
           width: command.width,

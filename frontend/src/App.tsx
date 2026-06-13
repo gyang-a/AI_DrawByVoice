@@ -6,7 +6,7 @@ import { MainLayout } from './components/MainLayout/MainLayout';
 import { VoicePanel } from './components/VoicePanel/VoicePanel';
 import { useStreamingSpeechRecognition } from './hooks/useStreamingSpeechRecognition';
 import { parseCommand } from './services/commandApi';
-import type { CanvasItem, CommandResponse, DrawingCommand, ExecutableDrawingCommand, Shape } from './types/drawing';
+import type { CanvasItem, CommandResponse, DrawingCommand, ExecutableDrawingCommand } from './types/drawing';
 import { executeCommand, isExecutableCommand } from './utils/executeCommand';
 import './App.css';
 
@@ -43,10 +43,6 @@ const createTestCommands = (): TestCommand[] => [
   },
 ];
 
-function isShapeItem(item: CanvasItem): item is Shape {
-  return 'type' in item;
-}
-
 function App() {
   const testCommands = useMemo(createTestCommands, []);
   const commandThreadId = useMemo(() => crypto.randomUUID(), []);
@@ -55,14 +51,13 @@ function App() {
     history: [],
   });
   const shapes = drawingState.shapes;
-  const sceneShapes = useMemo(() => shapes.filter(isShapeItem), [shapes]);
   const [currentText, setCurrentText] = useState('点击快捷指令测试绘图命令。');
   const [currentReply, setCurrentReply] = useState('等待测试指令。');
   const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [isParsingCommand, setIsParsingCommand] = useState(false);
   const speechRecognition = useStreamingSpeechRecognition({
-    scene: sceneShapes,
+    scene: shapes,
     threadId: commandThreadId,
     onRecognizedText: (text) => {
       setCurrentText(text);
@@ -106,7 +101,7 @@ function App() {
     try {
       const response = await parseCommand({
         text,
-        scene: sceneShapes,
+        scene: shapes,
         threadId: commandThreadId,
       });
 
