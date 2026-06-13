@@ -7,7 +7,7 @@ import { VoicePanel } from './components/VoicePanel/VoicePanel';
 import { useStreamingSpeechRecognition } from './hooks/useStreamingSpeechRecognition';
 import { parseCommand } from './services/commandApi';
 import type { CanvasItem, CommandResponse, DrawingCommand, ExecutableDrawingCommand } from './types/drawing';
-import { executeCommand, isExecutableCommand } from './utils/executeCommand';
+import { executeCommand, isClearHistoryCommand, isExecutableCommand } from './utils/executeCommand';
 import './App.css';
 
 type TestCommand = {
@@ -76,6 +76,14 @@ function App() {
     }));
   }
 
+  function clearHistoryAndScene() {
+    setDrawingState({
+      shapes: [],
+      history: [],
+    });
+    setCommandHistory([]);
+  }
+
   function undo() {
     setDrawingState((previousState) => {
       const previousShapes = previousState.history.at(-1);
@@ -89,6 +97,20 @@ function App() {
         history: previousState.history.slice(0, -1),
       };
     });
+  }
+
+  function applyDrawingCommand(command: DrawingCommand) {
+    if (isClearHistoryCommand(command)) {
+      clearHistoryAndScene();
+      return;
+    }
+
+    if (isExecutableCommand(command)) {
+      applyExecutableCommand(command);
+      return;
+    }
+
+    undo();
   }
 
   async function submitTextCommand(text: string) {
@@ -109,12 +131,7 @@ function App() {
       setCurrentReply(response.reply);
       setCurrentCommand(response.command);
 
-      if (isExecutableCommand(response.command)) {
-        applyExecutableCommand(response.command);
-        return;
-      }
-
-      undo();
+      applyDrawingCommand(response.command);
     } catch {
       setCurrentReply('指令解析失败，请确认后端服务已启动。');
     } finally {
@@ -134,12 +151,7 @@ function App() {
     setCurrentCommand(response.command);
     setCommandHistory((previousHistory) => [recognizedText, ...previousHistory]);
 
-    if (isExecutableCommand(response.command)) {
-      applyExecutableCommand(response.command);
-      return;
-    }
-
-    undo();
+    applyDrawingCommand(response.command);
   }
 
   async function toggleVoiceInput() {

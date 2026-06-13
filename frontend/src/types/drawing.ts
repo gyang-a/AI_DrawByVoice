@@ -136,6 +136,10 @@ export type ClearCanvasCommand = {
   action: 'clearCanvas';
 };
 
+export type ClearHistoryCommand = {
+  action: 'clearHistory';
+};
+
 export type BatchCommand = {
   action: 'batch';
   commands: ExecutableDrawingCommand[];
@@ -156,7 +160,8 @@ export type UndoCommand = {
 
 export type DrawingCommand =
   | ExecutableDrawingCommand
-  | UndoCommand;
+  | UndoCommand
+  | ClearHistoryCommand;
 
 export type CommandResponse = {
   command: DrawingCommand;

@@ -139,6 +139,10 @@ class ClearCanvasCommand(BaseModel):
     action: Literal["clearCanvas"]
 
 
+class ClearHistoryCommand(BaseModel):
+    action: Literal["clearHistory"]
+
+
 class BatchCommand(BaseModel):
     action: Literal["batch"]
     commands: list[ExecutableDrawingCommand]
@@ -166,7 +170,7 @@ class UndoCommand(BaseModel):
     action: Literal["undo"]
 
 
-DrawingCommand = ExecutableDrawingCommand | UndoCommand
+DrawingCommand = ExecutableDrawingCommand | UndoCommand | ClearHistoryCommand
 
 
 def _get_batch_depth(command: ExecutableDrawingCommand) -> int:
