@@ -6,6 +6,14 @@ import type {
   ShapePatch,
 } from '../types/drawing';
 
+const MAX_BATCH_DEPTH = 4;
+
+function compactShapePatch(params: ShapePatch): ShapePatch {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== null && value !== undefined),
+  ) as ShapePatch;
+}
+
 function updateShape(
   shapes: CanvasItem[],
   targetId: ShapeId,
@@ -16,9 +24,11 @@ function updateShape(
       return shape;
     }
 
+    const nextParams = compactShapePatch(params);
+
     return {
       ...shape,
-      ...params,
+      ...nextParams,
       id: shape.id,
       ...('type' in shape ? { type: shape.type } : { kind: shape.kind }),
     } as CanvasItem;
@@ -28,6 +38,7 @@ function updateShape(
 export function executeCommand(
   shapes: CanvasItem[],
   command: ExecutableDrawingCommand,
+  batchDepth = 0,
 ): CanvasItem[] {
   switch (command.action) {
     case 'drawShape':
@@ -57,8 +68,12 @@ export function executeCommand(
       return [];
 
     case 'batch':
+      if (batchDepth >= MAX_BATCH_DEPTH) {
+        return shapes;
+      }
+
       return command.commands.reduce(
-        (currentShapes, subCommand) => executeCommand(currentShapes, subCommand),
+        (currentShapes, subCommand) => executeCommand(currentShapes, subCommand, batchDepth + 1),
         shapes,
       );
 

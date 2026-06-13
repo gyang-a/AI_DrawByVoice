@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 ShapeType = Literal["circle", "rect", "line", "text", "polygon", "path"]
+MAX_BATCH_DEPTH = 10
 
 
 class BaseShape(BaseModel):
@@ -104,8 +105,14 @@ class ClearCanvasCommand(BaseModel):
 
 class BatchCommand(BaseModel):
     action: Literal["batch"]
-    # Mock 阶段只约束一层 batch，避免在还未引入 Agent 规划前增加递归 schema 复杂度。
-    commands: list[DrawShapeCommand | DrawSvgCommand | UpdateShapeCommand | DeleteShapeCommand | ClearCanvasCommand]
+    commands: list[ExecutableDrawingCommand]
+
+    @model_validator(mode="after")
+    def validate_batch_depth(self) -> BatchCommand:
+        if _get_batch_depth(self) > MAX_BATCH_DEPTH:
+            raise ValueError(f"batch nesting depth cannot exceed {MAX_BATCH_DEPTH}")
+
+        return self
 
 
 ExecutableDrawingCommand = (
@@ -123,6 +130,16 @@ class UndoCommand(BaseModel):
 
 
 DrawingCommand = ExecutableDrawingCommand | UndoCommand
+
+
+def _get_batch_depth(command: ExecutableDrawingCommand) -> int:
+    if not isinstance(command, BatchCommand):
+        return 0
+
+    if not command.commands:
+        return 1
+
+    return 1 + max(_get_batch_depth(sub_command) for sub_command in command.commands)
 
 
 class ParseCommandRequest(BaseModel):

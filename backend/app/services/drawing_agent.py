@@ -6,19 +6,16 @@ from functools import lru_cache
 from typing import Any
 from uuid import uuid4
 
-from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
-from app.schemas.command import (
-    BatchCommand,
-    DrawShapeCommand,
-    ParseCommandResponse,
-    PolygonShape,
-    RectShape,
-    Shape,
-)
+from app.schemas.command import BatchCommand, ParseCommandResponse, Shape
 
+
+MAX_MODEL_PARSE_ATTEMPTS = 3
 
 SYSTEM_PROMPT = """
 你是 VoiceCanvas 的绘图指令生成智能体。
@@ -43,7 +40,6 @@ SYSTEM_PROMPT = """
 - recognizedText：必须保留用户原始输入文本，不要改写。
 - command：必须是一个合法的 DrawingCommand。
 - reply：必须是一句简短中文反馈，说明执行了什么，或说明为什么无法执行。
-
 只允许返回 JSON 对象本身。
 不要返回 Markdown。
 不要返回代码块。
@@ -123,7 +119,7 @@ executeCommand(shapes, command)
   - deleteShape
   - clearCanvas
 - batch 中不允许包含 undo
-- batch 中不要嵌套 batch
+- batch 中可以包含 batch，但不能超过10层嵌套
 - 如果一个请求需要执行多个动作，应优先使用 batch
 
 ====================
@@ -585,165 +581,36 @@ def parse_command_with_agent(
     if not model_name:
         raise RuntimeError("DRAWING_MODEL is not configured.")
 
-    agent = _get_agent(model_name)
+    model = _get_model(model_name)
     scene_json = json.dumps([shape.model_dump() for shape in scene], ensure_ascii=False)
     user_message = (
         f"User request: {text}\n\n"
-        f"Request aliases: {build_request_aliases(text)}\n\n"
         f"Current scene JSON: {scene_json}\n\n"
         f"If a new shape id is needed, use this id seed: shape_{uuid4().hex}"
     )
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": user_message}]},
-        config={"configurable": {"thread_id": thread_id}},
+    messages = [
+        SystemMessage(content=SYSTEM_PROMPT),
+        HumanMessage(content=user_message),
+    ]
+    parser = RunnableLambda(_parse_model_response)
+    retryable_chain = (model | parser).with_retry(
+        retry_if_exception_type=(RuntimeError, json.JSONDecodeError, ValidationError),
+        stop_after_attempt=MAX_MODEL_PARSE_ATTEMPTS,
     )
-    structured_response = result.get("structured_response")
 
-    if isinstance(structured_response, ParseCommandResponse):
-        return _apply_template_guard(text, structured_response)
-
-    if isinstance(structured_response, dict):
-        return _apply_template_guard(text, ParseCommandResponse.model_validate(structured_response))
-
-    raise RuntimeError("Drawing agent did not return structured response.")
+    try:
+        return retryable_chain.invoke(messages)
+    except (RuntimeError, json.JSONDecodeError, ValidationError) as exc:
+        return _create_format_error_fallback(text, exc)
 
 
 def is_drawing_agent_enabled() -> bool:
     return bool(os.getenv("DRAWING_MODEL"))
 
 
-def build_request_aliases(text: str) -> str:
-    aliases: list[str] = []
-
-    if "房" in text or "屋" in text:
-        aliases.append("house")
-    if "树" in text:
-        aliases.append("tree")
-    if "太阳" in text:
-        aliases.append("sun")
-    if "云" in text:
-        aliases.append("cloud")
-    if "爱心" in text or "心形" in text:
-        aliases.append("heart")
-
-    return ", ".join(aliases) if aliases else "none"
-
-
-def build_house_command() -> dict:
-    """Return a VoiceCanvas ParseCommandResponse for a simple house."""
-    return _create_house_response("draw a house").model_dump()
-
-
-def _apply_template_guard(
-    text: str,
-    response: ParseCommandResponse,
-) -> ParseCommandResponse:
-    if _is_house_request(text) and response.command.action != "batch":
-        return _create_house_response(text)
-
-    if _is_house_request(text) and isinstance(response.command, BatchCommand):
-        if len(response.command.commands) < 3:
-            return _create_house_response(text)
-
-    return response
-
-
-def _is_house_request(text: str) -> bool:
-    normalized_text = text.lower()
-    return "house" in normalized_text or "房" in text or "屋" in text
-
-
-def _create_house_response(text: str) -> ParseCommandResponse:
-    suffix = uuid4().hex
-
-    return ParseCommandResponse(
-        recognizedText=text,
-        command=BatchCommand(
-            action="batch",
-            commands=[
-                DrawShapeCommand(
-                    action="drawShape",
-                    shape=RectShape(
-                        id=f"shape_house_wall_{suffix}",
-                        type="rect",
-                        x=300,
-                        y=320,
-                        width=200,
-                        height=150,
-                        fill="#facc15",
-                        stroke="#111827",
-                        strokeWidth=2,
-                    ),
-                ),
-                DrawShapeCommand(
-                    action="drawShape",
-                    shape=PolygonShape(
-                        id=f"shape_house_roof_{suffix}",
-                        type="polygon",
-                        points=[280, 320, 400, 220, 520, 320],
-                        fill="#ef4444",
-                        stroke="#111827",
-                        strokeWidth=2,
-                    ),
-                ),
-                DrawShapeCommand(
-                    action="drawShape",
-                    shape=RectShape(
-                        id=f"shape_house_door_{suffix}",
-                        type="rect",
-                        x=375,
-                        y=390,
-                        width=50,
-                        height=80,
-                        fill="#92400e",
-                        stroke="#111827",
-                        strokeWidth=2,
-                    ),
-                ),
-                DrawShapeCommand(
-                    action="drawShape",
-                    shape=RectShape(
-                        id=f"shape_house_window_left_{suffix}",
-                        type="rect",
-                        x=325,
-                        y=350,
-                        width=38,
-                        height=34,
-                        fill="#bae6fd",
-                        stroke="#111827",
-                        strokeWidth=2,
-                    ),
-                ),
-                DrawShapeCommand(
-                    action="drawShape",
-                    shape=RectShape(
-                        id=f"shape_house_window_right_{suffix}",
-                        type="rect",
-                        x=437,
-                        y=350,
-                        width=38,
-                        height=34,
-                        fill="#bae6fd",
-                        stroke="#111827",
-                        strokeWidth=2,
-                    ),
-                ),
-            ],
-        ),
-        reply="好的，已为你画了一个简单的房子。",
-    )
-
-
 @lru_cache(maxsize=4)
-def _get_agent(model_name: str):
-    model = _create_model(model_name)
-
-    return create_agent(
-        model=model,
-        tools=[],
-        system_prompt=SYSTEM_PROMPT,
-        response_format=ParseCommandResponse,
-    )
+def _get_model(model_name: str):
+    return _create_model(model_name)
 
 
 def _create_model(model_name: str):
@@ -758,9 +625,9 @@ def _create_model(model_name: str):
             api_key=SecretStr(api_key),
             base_url=base_url,
             extra_body=extra_body,
-        )
+        ).bind(response_format={"type": "json_object"})
 
-    return model_name
+    return init_chat_model(model_name)
 
 
 def _normalize_model_name(model_name: str, base_url: str) -> str:
@@ -768,3 +635,52 @@ def _normalize_model_name(model_name: str, base_url: str) -> str:
         return model_name.lower()
 
     return model_name
+
+
+def _parse_model_response(result: Any) -> ParseCommandResponse:
+    response_content = _extract_message_content(result.content)
+    response_json = _extract_json_object(response_content)
+
+    return ParseCommandResponse.model_validate(json.loads(response_json))
+
+
+def _create_format_error_fallback(text: str, _error: Exception) -> ParseCommandResponse:
+    return ParseCommandResponse(
+        recognizedText=text,
+        command=BatchCommand(action="batch", commands=[]),
+        reply="这次没有生成有效绘图命令，请再说一次。",
+    )
+
+
+def _extract_message_content(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict) and isinstance(item.get("text"), str):
+                parts.append(item["text"])
+
+        return "".join(parts)
+
+    return str(content)
+
+
+def _extract_json_object(content: str) -> str:
+    cleaned_content = content.strip()
+
+    if cleaned_content.startswith("```"):
+        cleaned_content = cleaned_content.strip("`").strip()
+        if cleaned_content.lower().startswith("json"):
+            cleaned_content = cleaned_content[4:].strip()
+
+    start = cleaned_content.find("{")
+    end = cleaned_content.rfind("}")
+
+    if start < 0 or end < start:
+        raise RuntimeError("Drawing model did not return a JSON object.")
+
+    return cleaned_content[start : end + 1]
