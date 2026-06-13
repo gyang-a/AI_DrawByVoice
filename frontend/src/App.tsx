@@ -6,7 +6,7 @@ import { MainLayout } from './components/MainLayout/MainLayout';
 import { VoicePanel } from './components/VoicePanel/VoicePanel';
 import { useStreamingSpeechRecognition } from './hooks/useStreamingSpeechRecognition';
 import { parseCommand } from './services/commandApi';
-import type { DrawingCommand, ExecutableDrawingCommand, Shape } from './types/drawing';
+import type { CommandResponse, DrawingCommand, ExecutableDrawingCommand, Shape } from './types/drawing';
 import { executeCommand, isExecutableCommand } from './utils/executeCommand';
 import './App.css';
 
@@ -49,13 +49,13 @@ function App() {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [isParsingCommand, setIsParsingCommand] = useState(false);
   const speechRecognition = useStreamingSpeechRecognition({
-    onPartialText: (text) => {
+    scene: shapes,
+    threadId: commandThreadId,
+    onRecognizedText: (text) => {
       setCurrentText(text);
-      setCurrentReply('正在听你说话。');
+      setCurrentReply('正在解析指令。');
     },
-    onFinalText: (text) => {
-      void submitTextCommand(text);
-    },
+    onCommand: applyCommandResponse,
     onError: (message) => {
       setCurrentReply(message);
     },
@@ -110,6 +110,22 @@ function App() {
 
   async function applyTestCommand(testCommand: TestCommand) {
     await submitTextCommand(testCommand.text);
+  }
+
+  function applyCommandResponse(response: CommandResponse) {
+    const recognizedText = response.recognizedText ?? currentText;
+
+    setCurrentText(recognizedText);
+    setCurrentReply(response.reply);
+    setCurrentCommand(response.command);
+    setCommandHistory((previousHistory) => [recognizedText, ...previousHistory]);
+
+    if (isExecutableCommand(response.command)) {
+      applyExecutableCommand(response.command);
+      return;
+    }
+
+    undo();
   }
 
   async function toggleVoiceInput() {

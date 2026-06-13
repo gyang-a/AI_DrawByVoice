@@ -110,10 +110,20 @@ cp .env.example .env
 
 前端可通过 `VITE_API_BASE_URL` 指定后端地址，默认使用 `http://127.0.0.1:8000`。
 
-画图模型使用 LangChain `create_agent`，通过模型字符串配置：
+画图模型使用 LangChain `create_agent`。本地模型可以直接使用 LangChain 模型字符串；DeepSeek 等 OpenAI-compatible 接口使用通用 base URL 和 API key 配置：
 
 ```txt
 DRAWING_MODEL=
+DRAWING_MODEL_BASE_URL=
+DRAWING_MODEL_API_KEY=
+```
+
+DeepSeek 示例：
+
+```txt
+DRAWING_MODEL=deepseek-chat
+DRAWING_MODEL_BASE_URL=https://api.deepseek.com
+DRAWING_MODEL_API_KEY=your_deepseek_api_key
 ```
 
 后端 ASR 使用讯飞语音听写服务，需要配置：
@@ -143,6 +153,7 @@ XFYUN_API_SECRET=
 - FastAPI 0.136.3：用于构建后端 API。
 - Pydantic 2.13.4：用于后续请求和响应数据校验。
 - LangChain 1.3.8：用于构建绘图指令 agent、结构化输出和短期记忆。
+- langchain-openai 1.3.x：用于接入 DeepSeek 等 OpenAI-compatible 模型接口。
 - websocket-client 1.9.x：用于后端连接讯飞语音听写 WebSocket API。
 
 ## 第三方依赖说明
@@ -159,6 +170,7 @@ XFYUN_API_SECRET=
 | fastapi[standard] | 提供 FastAPI 应用和 `fastapi dev` 命令 | `backend/` |
 | pydantic | 后续 API schema 校验 | `backend/` |
 | langchain | 构建绘图指令 agent 和管理对话线程 | `backend/app/services/drawing_agent.py` |
+| langchain-openai | 通过通用 OpenAI-compatible 协议接入 DeepSeek 等模型 | `backend/app/services/drawing_agent.py` |
 | websocket-client | 连接讯飞 ASR WebSocket 服务 | `backend/app/services/asr_service.py` |
 
 ## 当前已实现功能

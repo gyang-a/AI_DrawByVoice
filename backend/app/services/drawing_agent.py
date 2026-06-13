@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 import os
 from functools import lru_cache
+from typing import Any
 from uuid import uuid4
 
 from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import SecretStr
 
 from app.schemas.command import (
     BatchCommand,
@@ -593,10 +596,36 @@ def _create_house_response(text: str) -> ParseCommandResponse:
 
 @lru_cache(maxsize=4)
 def _get_agent(model_name: str):
+    model = _create_model(model_name)
+
     return create_agent(
-        model=model_name,
+        model=model,
         tools=[build_house_command],
         system_prompt=SYSTEM_PROMPT,
         response_format=ParseCommandResponse,
         checkpointer=InMemorySaver(),
     )
+
+
+def _create_model(model_name: str):
+    api_key = os.getenv("DRAWING_MODEL_API_KEY")
+    base_url = os.getenv("DRAWING_MODEL_BASE_URL")
+
+    if api_key and base_url:
+        extra_body: dict[str, Any] = {"thinking": {"type": "disabled"}}
+
+        return ChatOpenAI(
+            model=_normalize_model_name(model_name, base_url),
+            api_key=SecretStr(api_key),
+            base_url=base_url,
+            extra_body=extra_body,
+        )
+
+    return model_name
+
+
+def _normalize_model_name(model_name: str, base_url: str) -> str:
+    if "deepseek" in base_url.lower():
+        return model_name.lower()
+
+    return model_name

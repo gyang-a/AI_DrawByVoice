@@ -38,6 +38,12 @@ def recognize_audio_file(audio_file: UploadFile) -> str:
 
     audio_bytes = _read_upload_file(audio_file)
     pcm_bytes = _extract_pcm_from_wav(audio_bytes)
+    return recognize_pcm_audio(pcm_bytes)
+
+
+def recognize_pcm_audio(pcm_bytes: bytes) -> str:
+    app_id, api_key, api_secret = _get_xfyun_credentials()
+
     if not pcm_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
