@@ -15,6 +15,11 @@ type TestCommand = {
   text: string;
 };
 
+type DrawingState = {
+  shapes: CanvasItem[];
+  history: CanvasItem[][];
+};
+
 const createTestCommands = (): TestCommand[] => [
   {
     label: '画红色圆形',
@@ -45,9 +50,12 @@ function isShapeItem(item: CanvasItem): item is Shape {
 function App() {
   const testCommands = useMemo(createTestCommands, []);
   const commandThreadId = useMemo(() => crypto.randomUUID(), []);
-  const [shapes, setShapes] = useState<CanvasItem[]>([]);
+  const [drawingState, setDrawingState] = useState<DrawingState>({
+    shapes: [],
+    history: [],
+  });
+  const shapes = drawingState.shapes;
   const sceneShapes = useMemo(() => shapes.filter(isShapeItem), [shapes]);
-  const [history, setHistory] = useState<CanvasItem[][]>([]);
   const [currentText, setCurrentText] = useState('点击快捷指令测试绘图命令。');
   const [currentReply, setCurrentReply] = useState('等待测试指令。');
   const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(null);
@@ -67,22 +75,24 @@ function App() {
   });
 
   function applyExecutableCommand(command: ExecutableDrawingCommand) {
-    setShapes((previousShapes) => {
-      setHistory((previousHistory) => [...previousHistory, previousShapes]);
-      return executeCommand(previousShapes, command);
-    });
+    setDrawingState((previousState) => ({
+      shapes: executeCommand(previousState.shapes, command),
+      history: [...previousState.history, previousState.shapes],
+    }));
   }
 
   function undo() {
-    setHistory((previousHistory) => {
-      const previousShapes = previousHistory.at(-1);
+    setDrawingState((previousState) => {
+      const previousShapes = previousState.history.at(-1);
 
       if (!previousShapes) {
-        return previousHistory;
+        return previousState;
       }
 
-      setShapes(previousShapes);
-      return previousHistory.slice(0, -1);
+      return {
+        shapes: previousShapes,
+        history: previousState.history.slice(0, -1),
+      };
     });
   }
 
