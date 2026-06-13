@@ -123,6 +123,13 @@ class UpdateShapeCommand(BaseModel):
     params: ShapePatch
 
 
+class UpdateSvgPartCommand(BaseModel):
+    action: Literal["updateSvgPart"]
+    targetId: str
+    part: str
+    svg: str
+
+
 class DeleteShapeCommand(BaseModel):
     action: Literal["deleteShape"]
     targetId: str
@@ -148,6 +155,7 @@ ExecutableDrawingCommand = (
     DrawShapeCommand
     | DrawSvgCommand
     | UpdateShapeCommand
+    | UpdateSvgPartCommand
     | DeleteShapeCommand
     | ClearCanvasCommand
     | BatchCommand

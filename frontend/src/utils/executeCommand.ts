@@ -43,6 +43,42 @@ function updateShape(
   });
 }
 
+function updateSvgPart(
+  shapes: CanvasItem[],
+  targetId: ShapeId,
+  partName: string,
+  svg: string,
+): CanvasItem[] {
+  return shapes.map((shape) => {
+    if (shape.id !== targetId || !('kind' in shape) || shape.kind !== 'svg' || !shape.parts?.length) {
+      return shape;
+    }
+
+    let hasMatchedPart = false;
+    const nextParts = shape.parts.map((part) => {
+      if (part.part !== partName) {
+        return part;
+      }
+
+      hasMatchedPart = true;
+      return {
+        ...part,
+        svg,
+      };
+    });
+
+    if (!hasMatchedPart) {
+      return shape;
+    }
+
+    return {
+      ...shape,
+      parts: nextParts,
+      svg: buildSvgFromParts(nextParts, shape.width, shape.height, shape.viewBox),
+    };
+  });
+}
+
 export function executeCommand(
   shapes: CanvasItem[],
   command: ExecutableDrawingCommand,
@@ -74,6 +110,9 @@ export function executeCommand(
 
     case 'updateShape':
       return updateShape(shapes, command.targetId, command.params);
+
+    case 'updateSvgPart':
+      return updateSvgPart(shapes, command.targetId, command.part, command.svg);
 
     case 'deleteShape':
       return shapes.filter((shape) => shape.id !== command.targetId);
