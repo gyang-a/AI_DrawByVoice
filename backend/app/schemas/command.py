@@ -77,6 +77,16 @@ class DrawShapeCommand(BaseModel):
     shape: Shape
 
 
+class DrawSvgCommand(BaseModel):
+    action: Literal["drawSvg"]
+    id: str | None = None
+    svg: str
+    x: float
+    y: float
+    width: float
+    height: float
+
+
 class UpdateShapeCommand(BaseModel):
     action: Literal["updateShape"]
     targetId: str
@@ -95,11 +105,12 @@ class ClearCanvasCommand(BaseModel):
 class BatchCommand(BaseModel):
     action: Literal["batch"]
     # Mock 阶段只约束一层 batch，避免在还未引入 Agent 规划前增加递归 schema 复杂度。
-    commands: list[DrawShapeCommand | UpdateShapeCommand | DeleteShapeCommand | ClearCanvasCommand]
+    commands: list[DrawShapeCommand | DrawSvgCommand | UpdateShapeCommand | DeleteShapeCommand | ClearCanvasCommand]
 
 
 ExecutableDrawingCommand = (
     DrawShapeCommand
+    | DrawSvgCommand
     | UpdateShapeCommand
     | DeleteShapeCommand
     | ClearCanvasCommand

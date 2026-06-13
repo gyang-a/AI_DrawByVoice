@@ -6,7 +6,7 @@ export type CanvasState = {
   width: number;
   height: number;
   background: string;
-  shapes: Shape[];
+  shapes: CanvasItem[];
 };
 
 export type BaseShape = {
@@ -55,6 +55,16 @@ export type PathShape = BaseShape & {
   data: string;
 };
 
+export type SvgCanvasItem = {
+  id: ShapeId;
+  kind: 'svg';
+  svg: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type Shape =
   | CircleShape
   | RectShape
@@ -62,6 +72,8 @@ export type Shape =
   | TextShape
   | PolygonShape
   | PathShape;
+
+export type CanvasItem = Shape | SvgCanvasItem;
 
 export type ShapePatch = Partial<{
   x: number;
@@ -81,6 +93,16 @@ export type ShapePatch = Partial<{
 export type DrawShapeCommand = {
   action: 'drawShape';
   shape: Shape;
+};
+
+export type DrawSvgCommand = {
+  action: 'drawSvg';
+  id?: ShapeId;
+  svg: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 export type UpdateShapeCommand = {
@@ -105,6 +127,7 @@ export type BatchCommand = {
 
 export type ExecutableDrawingCommand =
   | DrawShapeCommand
+  | DrawSvgCommand
   | UpdateShapeCommand
   | DeleteShapeCommand
   | ClearCanvasCommand

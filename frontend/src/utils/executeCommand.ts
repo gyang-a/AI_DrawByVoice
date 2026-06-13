@@ -1,16 +1,16 @@
 import type {
+  CanvasItem,
   DrawingCommand,
   ExecutableDrawingCommand,
-  Shape,
   ShapeId,
   ShapePatch,
 } from '../types/drawing';
 
 function updateShape(
-  shapes: Shape[],
+  shapes: CanvasItem[],
   targetId: ShapeId,
   params: ShapePatch,
-): Shape[] {
+): CanvasItem[] {
   return shapes.map((shape) => {
     if (shape.id !== targetId) {
       return shape;
@@ -20,18 +20,32 @@ function updateShape(
       ...shape,
       ...params,
       id: shape.id,
-      type: shape.type,
-    } as Shape;
+      ...('type' in shape ? { type: shape.type } : { kind: shape.kind }),
+    } as CanvasItem;
   });
 }
 
 export function executeCommand(
-  shapes: Shape[],
+  shapes: CanvasItem[],
   command: ExecutableDrawingCommand,
-): Shape[] {
+): CanvasItem[] {
   switch (command.action) {
     case 'drawShape':
       return [...shapes, command.shape];
+
+    case 'drawSvg':
+      return [
+        ...shapes,
+        {
+          id: command.id ?? crypto.randomUUID(),
+          kind: 'svg',
+          svg: command.svg,
+          x: command.x,
+          y: command.y,
+          width: command.width,
+          height: command.height,
+        },
+      ];
 
     case 'updateShape':
       return updateShape(shapes, command.targetId, command.params);

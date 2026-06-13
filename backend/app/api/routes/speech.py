@@ -16,8 +16,8 @@ from app.services.command_parser import parse_command as parse_command_service
 
 router = APIRouter(tags=["speech"])
 
-AUDIO_RMS_THRESHOLD = 500
-SILENCE_TIMEOUT_SECONDS = 2.0
+AUDIO_RMS_THRESHOLD = 2000
+SILENCE_TIMEOUT_SECONDS = 1.20
 MIN_UTTERANCE_BYTES = 16000
 PRE_SPEECH_BYTES = 16000
 shape_list_adapter = TypeAdapter(list[Shape])
@@ -39,7 +39,7 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
     has_speech = False
     last_speech_at = 0.0
     send_lock = asyncio.Lock()
-    tasks: set[asyncio.Task[None]] = set()
+    utterance_queue: asyncio.Queue[tuple[bytes, list[Shape], str] | None] = asyncio.Queue()
 
     async def send_event(event: dict) -> None:
         if websocket.client_state != WebSocketState.CONNECTED:
@@ -83,12 +83,26 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
         except Exception as exc:
             await send_event({"type": "error", "text": str(exc)})
 
-    def start_utterance_task(audio_bytes: bytes) -> None:
-        task = asyncio.create_task(process_utterance(bytes(audio_bytes), list(scene), thread_id))
-        tasks.add(task)
-        task.add_done_callback(tasks.discard)
+    async def process_utterance_queue() -> None:
+        while True:
+            item = await utterance_queue.get()
+
+            if item is None:
+                utterance_queue.task_done()
+                break
+
+            audio_bytes, current_scene, current_thread_id = item
+
+            try:
+                await process_utterance(audio_bytes, current_scene, current_thread_id)
+            finally:
+                utterance_queue.task_done()
+
+    def enqueue_utterance(audio_bytes: bytes) -> None:
+        utterance_queue.put_nowait((bytes(audio_bytes), list(scene), thread_id))
 
     try:
+        queue_worker = asyncio.create_task(process_utterance_queue())
         await send_event({"type": "ready", "text": ""})
 
         while True:
@@ -119,7 +133,7 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
 
                         if now - last_speech_at >= SILENCE_TIMEOUT_SECONDS:
                             if len(utterance_buffer) >= MIN_UTTERANCE_BYTES:
-                                start_utterance_task(bytes(utterance_buffer))
+                                enqueue_utterance(bytes(utterance_buffer))
 
                             utterance_buffer.clear()
                             has_speech = False
@@ -143,11 +157,11 @@ async def stream_recognize_speech(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         pass
     finally:
-        for task in list(tasks):
-            task.cancel()
-        for task in list(tasks):
+        if "queue_worker" in locals():
+            utterance_queue.put_nowait(None)
+            queue_worker.cancel()
             with suppress(asyncio.CancelledError):
-                await task
+                await queue_worker
 
 
 def calculate_pcm_rms(audio_bytes: bytes) -> float:
