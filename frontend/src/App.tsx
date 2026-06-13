@@ -40,6 +40,7 @@ const createTestCommands = (): TestCommand[] => [
 
 function App() {
   const testCommands = useMemo(createTestCommands, []);
+  const commandThreadId = useMemo(() => crypto.randomUUID(), []);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [history, setHistory] = useState<Shape[][]>([]);
   const [currentText, setCurrentText] = useState('点击快捷指令测试绘图命令。');
@@ -87,6 +88,7 @@ function App() {
       const response = await parseCommand({
         text,
         scene: shapes,
+        threadId: commandThreadId,
       });
 
       setCurrentText(response.recognizedText ?? text);

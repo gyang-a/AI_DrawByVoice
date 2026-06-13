@@ -12,6 +12,16 @@ from app.schemas.command import (
     UndoCommand,
     UpdateShapeCommand,
 )
+from app.services.drawing_agent import is_drawing_agent_enabled, parse_command_with_agent
+
+
+def parse_command(text: str, scene: list[Shape], thread_id: str) -> ParseCommandResponse:
+    if not is_drawing_agent_enabled():
+        response = parse_mock_command(text, scene)
+        response.reply = f"[mock] {response.reply}"
+        return response
+
+    return parse_command_with_agent(text, scene, thread_id)
 
 
 def parse_mock_command(text: str, scene: list[Shape]) -> ParseCommandResponse:

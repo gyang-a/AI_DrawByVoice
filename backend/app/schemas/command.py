@@ -117,6 +117,7 @@ DrawingCommand = ExecutableDrawingCommand | UndoCommand
 class ParseCommandRequest(BaseModel):
     text: str = Field(min_length=1)
     scene: list[Shape] = Field(default_factory=list)
+    threadId: str = "default-canvas"
 
 
 class ParseCommandResponse(BaseModel):
