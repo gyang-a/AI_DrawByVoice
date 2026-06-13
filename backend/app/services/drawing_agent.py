@@ -87,26 +87,35 @@ executeCommand(shapes, command)
   "params": ShapePatch
 }
 
-4. deleteShape
+4. updateSvgPart
+格式：
+{
+  "action": "updateSvgPart",
+  "targetId": string,
+  "part": string,
+  "svg": string
+}
+
+5. deleteShape
 格式：
 {
   "action": "deleteShape",
   "targetId": string
 }
 
-5. clearCanvas
+6. clearCanvas
 格式：
 {
   "action": "clearCanvas"
 }
 
-6. undo
+7. undo
 格式：
 {
   "action": "undo"
 }
 
-7. batch
+8. batch
 格式：
 {
   "action": "batch",
@@ -118,6 +127,7 @@ executeCommand(shapes, command)
   - drawShape
   - drawSvg
   - updateShape
+  - updateSvgPart
   - deleteShape
   - clearCanvas
 - batch 中不允许包含 undo
@@ -248,7 +258,29 @@ drawSvg 用于表示一个完整的 SVG 矢量对象。
 如果一个复杂对象可以通过 batch + drawShape 或 drawShape(path) 清楚表达，应优先使用那些方式，而不是 drawSvg。
 
 ====================
-五、ShapePatch 约束
+五、updateSvgPart 约束
+====================
+
+updateSvgPart 用于替换已有 SVG 对象中某个语义部件的 SVG 片段。
+
+格式如下：
+{
+  "action": "updateSvgPart",
+  "targetId": string,
+  "part": string,
+  "svg": string
+}
+
+规则如下：
+- targetId 必须指向 scene 中 kind = "svg" 的对象
+- part 必须精确匹配该 SVG 对象 parts 中已有的 part 名称
+- svg 只能是这个 part 对应的新 SVG 片段，不要返回完整 <svg> 根标签
+- updateSvgPart 只适合修改局部部件，例如 "左眼"、"左翼"、"按钮文字"
+- 如果需要整体替换 SVG，请使用 deleteShape + drawSvg
+- 如果 scene 中没有对应 part，不要编造 part 名称，应返回空 batch 并说明无法找到对应部件
+
+====================
+六、ShapePatch 约束
 ====================
 
 updateShape 的 params 只能包含以下字段：
@@ -276,11 +308,11 @@ updateShape 的 params 只能包含以下字段：
 - updateShape 不能修改图形 id
 - updateShape 不能修改图形 type
 - 如果需要改变图形类型，应先 deleteShape，再 drawShape 或 drawSvg
-- 不支持细粒度修改 drawSvg 内部内容
-- 如果用户要求修改一个 SVG 对象，可采用 deleteShape + drawSvg 的方式整体替换
+- 如果用户要求修改 SVG 的某个语义部件，应优先使用 updateSvgPart
+- 如果用户要求整体替换 SVG 对象，可采用 deleteShape + drawSvg 的方式整体替换
 
 ====================
-六、画布规则
+七、画布规则
 ====================
 
 画布尺寸固定为：
@@ -416,6 +448,7 @@ id 规则：
 
 4. 如果用户要求修改已有图形：
 - 普通 shape：使用 updateShape
+- SVG 对象的某个语义部件：使用 updateSvgPart
 - 如果本质上需要替换整个对象，可使用 batch：
   - deleteShape
   - 再 drawShape 或 drawSvg
@@ -620,7 +653,8 @@ def parse_command_with_agent(
         f"Current scene JSON: {scene_json}\n\n"
         "Scene items with a type field are basic shapes. "
         "Scene items with kind='svg' are SVG canvas items; their parts field describes semantic SVG fragments. "
-        "Use updateShape with their targetId to move or resize them, and use deleteShape plus drawSvg to replace SVG content.\n\n"
+        "Use updateShape with their targetId to move or resize them, updateSvgPart to replace one existing semantic part, "
+        "and deleteShape plus drawSvg to replace SVG content.\n\n"
         f"If a new shape id is needed, use this id seed: shape_{uuid4().hex}"
     )
     messages = [

@@ -120,6 +120,13 @@ export type UpdateShapeCommand = {
   params: ShapePatch;
 };
 
+export type UpdateSvgPartCommand = {
+  action: 'updateSvgPart';
+  targetId: ShapeId;
+  part: string;
+  svg: string;
+};
+
 export type DeleteShapeCommand = {
   action: 'deleteShape';
   targetId: ShapeId;
@@ -138,6 +145,7 @@ export type ExecutableDrawingCommand =
   | DrawShapeCommand
   | DrawSvgCommand
   | UpdateShapeCommand
+  | UpdateSvgPartCommand
   | DeleteShapeCommand
   | ClearCanvasCommand
   | BatchCommand;
