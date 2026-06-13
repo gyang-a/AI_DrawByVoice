@@ -81,7 +81,8 @@
 }
 
 .command-panel__history {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   height: 260px;
   overflow-y: auto;
@@ -140,4 +141,7 @@
   color: #344054;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

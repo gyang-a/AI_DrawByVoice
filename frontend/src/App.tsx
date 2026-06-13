@@ -67,19 +67,23 @@ function App() {
   });
 
   function applyExecutableCommand(command: ExecutableDrawingCommand) {
-    setHistory((previousHistory) => [...previousHistory, shapes]);
-    setShapes((previousShapes) => executeCommand(previousShapes, command));
+    setShapes((previousShapes) => {
+      setHistory((previousHistory) => [...previousHistory, previousShapes]);
+      return executeCommand(previousShapes, command);
+    });
   }
 
   function undo() {
-    const previousShapes = history.at(-1);
+    setHistory((previousHistory) => {
+      const previousShapes = previousHistory.at(-1);
 
-    if (!previousShapes) {
-      return;
-    }
+      if (!previousShapes) {
+        return previousHistory;
+      }
 
-    setShapes(previousShapes);
-    setHistory((previousHistory) => previousHistory.slice(0, -1));
+      setShapes(previousShapes);
+      return previousHistory.slice(0, -1);
+    });
   }
 
   async function submitTextCommand(text: string) {
