@@ -1,9 +1,92 @@
-import { Circle, Layer, Line, Path, Rect, Stage, Text } from 'react-konva';
-import type { Shape } from '../../types/drawing';
+import { useEffect, useState } from 'react';
+import { Circle, Image as KonvaImage, Layer, Line, Path, Rect, Stage, Text } from 'react-konva';
+import type { CanvasItem, Shape, SvgCanvasItem } from '../../types/drawing';
 import './CanvasBoard.css';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
+
+function sanitizeSvgMarkup(svg: string): string | null {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(svg, 'image/svg+xml');
+
+  if (document.querySelector('parsererror')) {
+    return null;
+  }
+
+  const forbiddenTags = new Set(['script', 'iframe', 'object', 'embed', 'foreignobject']);
+  const elements = Array.from(document.querySelectorAll('*'));
+
+  for (const element of elements) {
+    if (forbiddenTags.has(element.tagName.toLowerCase())) {
+      element.remove();
+      continue;
+    }
+
+    for (const attribute of Array.from(element.attributes)) {
+      if (attribute.name.toLowerCase().startsWith('on')) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  }
+
+  const root = document.documentElement;
+
+  if (root.tagName.toLowerCase() !== 'svg') {
+    return null;
+  }
+
+  if (!root.getAttribute('xmlns')) {
+    root.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  }
+
+  return new XMLSerializer().serializeToString(root);
+}
+
+function SvgImageShape({ shape }: { shape: SvgCanvasItem }) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const sanitizedSvg = sanitizeSvgMarkup(shape.svg);
+
+    if (!sanitizedSvg) {
+      setImage(null);
+      return;
+    }
+
+    const blob = new Blob([sanitizedSvg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const nextImage = new window.Image();
+
+    nextImage.onload = () => {
+      setImage(nextImage);
+    };
+    nextImage.onerror = () => {
+      setImage(null);
+    };
+    nextImage.src = url;
+
+    return () => {
+      nextImage.onload = null;
+      nextImage.onerror = null;
+      URL.revokeObjectURL(url);
+    };
+  }, [shape.svg]);
+
+  if (!image) {
+    return null;
+  }
+
+  return (
+    <KonvaImage
+      image={image}
+      x={shape.x}
+      y={shape.y}
+      width={shape.width}
+      height={shape.height}
+    />
+  );
+}
 
 function renderShape(shape: Shape) {
   switch (shape.type) {
@@ -80,11 +163,20 @@ function renderShape(shape: Shape) {
           strokeWidth={shape.strokeWidth}
         />
       );
+
   }
 }
 
+function renderCanvasItem(item: CanvasItem) {
+  if ('type' in item) {
+    return renderShape(item);
+  }
+
+  return <SvgImageShape key={item.id} shape={item} />;
+}
+
 type CanvasBoardProps = {
-  shapes: Shape[];
+  shapes: CanvasItem[];
 };
 
 export function CanvasBoard({ shapes }: CanvasBoardProps) {
@@ -110,7 +202,7 @@ export function CanvasBoard({ shapes }: CanvasBoardProps) {
           height={CANVAS_HEIGHT}
           className="canvas-board__stage"
         >
-          <Layer>{shapes.map(renderShape)}</Layer>
+          <Layer>{shapes.map(renderCanvasItem)}</Layer>
         </Stage>
       </div>
       <footer className="canvas-board__meta">
