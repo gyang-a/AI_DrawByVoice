@@ -30,7 +30,7 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
 │       │   ├── commandApi.ts
 │       │   └── speechApi.ts
 │       ├── hooks/
-│       │   └── useAudioRecorder.ts
+│       │   └── useStreamingSpeechRecognition.ts
 │       ├── utils/
 │       │   └── executeCommand.ts
 │       ├── index.css
@@ -55,6 +55,7 @@ VoiceCanvas 是一个 AI 语音绘图工具项目。本仓库采用前后端同�
     ├── services/
     │   ├── __init__.py
     │   ├── asr_service.py
+    │   ├── drawing_agent.py
     │   └── command_parser.py
     └── tests/
         └── __init__.py
@@ -84,7 +85,7 @@ uv run fastapi dev app/main.py
 GET /api/health
 ```
 
-Mock 指令解析接口：
+绘图指令解析接口：
 
 ```txt
 POST /api/commands/parse
@@ -105,9 +106,15 @@ WebSocket /api/speech/asr/stream
 cp .env.example .env
 ```
 
-当前后端 mock 指令解析不依赖真实 AI 或数据库；语音识别需要配置讯飞 ASR 环境变量。
+未配置 `DRAWING_MODEL` 时，后端绘图指令解析会使用 mock fallback；配置后会通过 LangChain agent 调用画图模型。
 
 前端可通过 `VITE_API_BASE_URL` 指定后端地址，默认使用 `http://127.0.0.1:8000`。
+
+画图模型使用 LangChain `create_agent`，通过模型字符串配置：
+
+```txt
+DRAWING_MODEL=
+```
 
 后端 ASR 使用讯飞语音听写服务，需要配置：
 
@@ -135,6 +142,7 @@ XFYUN_API_SECRET=
 - Python 3.12+：后端运行环境。
 - FastAPI 0.136.3：用于构建后端 API。
 - Pydantic 2.13.4：用于后续请求和响应数据校验。
+- LangChain 1.3.8：用于构建绘图指令 agent、结构化输出和短期记忆。
 - websocket-client 1.9.x：用于后端连接讯飞语音听写 WebSocket API。
 
 ## 第三方依赖说明
@@ -150,6 +158,7 @@ XFYUN_API_SECRET=
 | react-konva | 在 React 中使用 Konva 渲染图形 | `frontend/src/components/CanvasBoard/` |
 | fastapi[standard] | 提供 FastAPI 应用和 `fastapi dev` 命令 | `backend/` |
 | pydantic | 后续 API schema 校验 | `backend/` |
+| langchain | 构建绘图指令 agent 和管理对话线程 | `backend/app/services/drawing_agent.py` |
 | websocket-client | 连接讯飞 ASR WebSocket 服务 | `backend/app/services/asr_service.py` |
 
 ## 当前已实现功能
@@ -162,13 +171,13 @@ XFYUN_API_SECRET=
 - 前端命令执行器纯函数，绘图命令需携带图形 `id`。
 - 前端 Konva 静态画布渲染。
 - 前端测试按钮模拟绘图命令。
-- 前端接入后端 mock 指令解析接口。
+- 前端接入后端绘图指令解析接口。
 - 前端支持通过麦克风实时采集 16kHz PCM 分片，并通过 WebSocket 发送到后端流式识别。
 - 前端支持本地静音检测，说完后自动结束当前语音句子并提交绘图指令。
 - 前后端绘图协议支持 SVG path 图形。
 - 最小 FastAPI 后端入口。
 - `/api/health` 健康检查接口。
-- 后端 mock 指令解析接口。
+- 后端支持 LangChain 绘图指令 agent，未配置模型时回退到 mock 解析。
 - 后端讯飞 ASR HTTP 识别接口和 WebSocket 流式识别接口。
 - 后端允许本地前端开发地址跨域访问。
 
