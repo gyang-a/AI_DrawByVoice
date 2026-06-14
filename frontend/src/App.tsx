@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CanvasBoard } from './components/CanvasBoard/CanvasBoard';
 import { CommandPanel } from './components/CommandPanel/CommandPanel';
 import { Header } from './components/Header/Header';
@@ -8,6 +8,13 @@ import { useStreamingSpeechRecognition } from './hooks/useStreamingSpeechRecogni
 import { parseCommand } from './services/commandApi';
 import type { CanvasItem, CommandResponse, DrawingCommand, ExecutableDrawingCommand } from './types/drawing';
 import { executeCommand, isClearHistoryCommand, isExecutableCommand } from './utils/executeCommand';
+import {
+  loadDraftWorkspaceSnapshot,
+  loadSavedWorkspaceSnapshot,
+  saveDraftWorkspaceSnapshot,
+  saveSavedWorkspaceSnapshot,
+  type WorkspaceSnapshot,
+} from './utils/workspaceStorage';
 import './App.css';
 
 type TestCommand = {
@@ -43,18 +50,36 @@ const createTestCommands = (): TestCommand[] => [
   },
 ];
 
+const DEFAULT_CURRENT_TEXT = '点击快捷指令测试绘图命令。';
+const DEFAULT_CURRENT_REPLY = '等待测试指令。';
+
 function App() {
   const testCommands = useMemo(createTestCommands, []);
   const commandThreadId = useMemo(() => crypto.randomUUID(), []);
-  const [drawingState, setDrawingState] = useState<DrawingState>({
-    shapes: [],
-    history: [],
-  });
+  const initialWorkspaceSnapshot = useMemo(
+    () => loadDraftWorkspaceSnapshot() ?? loadSavedWorkspaceSnapshot(),
+    [],
+  );
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(initialWorkspaceSnapshot?.savedAt ?? null);
+  const [drawingState, setDrawingState] = useState<DrawingState>(() => (
+    initialWorkspaceSnapshot?.drawingState ?? {
+      shapes: [],
+      history: [],
+    }
+  ));
   const shapes = drawingState.shapes;
-  const [currentText, setCurrentText] = useState('点击快捷指令测试绘图命令。');
-  const [currentReply, setCurrentReply] = useState('等待测试指令。');
-  const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(null);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [currentText, setCurrentText] = useState(() => (
+    initialWorkspaceSnapshot?.currentText ?? DEFAULT_CURRENT_TEXT
+  ));
+  const [currentReply, setCurrentReply] = useState(() => (
+    initialWorkspaceSnapshot?.currentReply ?? DEFAULT_CURRENT_REPLY
+  ));
+  const [currentCommand, setCurrentCommand] = useState<DrawingCommand | null>(() => (
+    initialWorkspaceSnapshot?.currentCommand ?? null
+  ));
+  const [commandHistory, setCommandHistory] = useState<string[]>(() => (
+    initialWorkspaceSnapshot?.commandHistory ?? []
+  ));
   const [isParsingCommand, setIsParsingCommand] = useState(false);
   const speechRecognition = useStreamingSpeechRecognition({
     scene: shapes,
@@ -68,6 +93,48 @@ function App() {
       setCurrentReply(message);
     },
   });
+
+  useEffect(() => {
+    const snapshot = persistDraftWorkspace();
+    setLastSavedAt(snapshot.savedAt);
+  }, [drawingState, commandHistory, currentText, currentReply, currentCommand]);
+
+  function createWorkspacePayload(): Omit<WorkspaceSnapshot, 'version' | 'savedAt'> {
+    return {
+      drawingState,
+      commandHistory,
+      currentText,
+      currentReply,
+      currentCommand,
+    };
+  }
+
+  function persistDraftWorkspace(): WorkspaceSnapshot {
+    return saveDraftWorkspaceSnapshot(createWorkspacePayload());
+  }
+
+  function saveWorkspace() {
+    const snapshot = saveSavedWorkspaceSnapshot(createWorkspacePayload());
+    saveDraftWorkspaceSnapshot(createWorkspacePayload());
+    setLastSavedAt(snapshot.savedAt);
+    setCurrentReply('作品已保存到本地。');
+  }
+
+  function loadWorkspace() {
+    const snapshot = loadSavedWorkspaceSnapshot();
+
+    if (!snapshot) {
+      setCurrentReply('本地还没有手动保存的作品。');
+      return;
+    }
+
+    setDrawingState(snapshot.drawingState);
+    setCommandHistory(snapshot.commandHistory);
+    setCurrentText(snapshot.currentText);
+    setCurrentReply('作品已从本地加载。');
+    setCurrentCommand(snapshot.currentCommand);
+    setLastSavedAt(snapshot.savedAt);
+  }
 
   function applyExecutableCommand(command: ExecutableDrawingCommand) {
     setDrawingState((previousState) => ({
@@ -182,7 +249,14 @@ function App() {
           onCommandSelect={applyTestCommand}
         />
       }
-      canvasBoard={<CanvasBoard shapes={shapes} />}
+      canvasBoard={(
+        <CanvasBoard
+          shapes={shapes}
+          lastSavedAt={lastSavedAt}
+          onLoadWorkspace={loadWorkspace}
+          onSaveWorkspace={saveWorkspace}
+        />
+      )}
       commandPanel={
         <CommandPanel
           currentText={currentText}

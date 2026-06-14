@@ -407,27 +407,59 @@ function renderCanvasItem(item: CanvasItem) {
 
 type CanvasBoardProps = {
   shapes: CanvasItem[];
+  lastSavedAt: string | null;
+  onLoadWorkspace: () => void;
+  onSaveWorkspace: () => void;
 };
 
-export function CanvasBoard({ shapes }: CanvasBoardProps) {
+export function CanvasBoard({
+  shapes,
+  lastSavedAt,
+  onLoadWorkspace,
+  onSaveWorkspace,
+}: CanvasBoardProps) {
+  const stageRef = useRef<Konva.Stage | null>(null);
+
+  function exportPng() {
+    const stage = stageRef.current;
+
+    if (!stage) {
+      return;
+    }
+
+    const dataUrl = stage.toDataURL({
+      mimeType: 'image/png',
+      pixelRatio: 2,
+    });
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    link.href = dataUrl;
+    link.download = `voice-canvas-${timestamp}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
   return (
     <section className="canvas-board" aria-labelledby="canvas-board-title">
       <div className="canvas-board__header">
         <h2 id="canvas-board-title">画布区域</h2>
-        <div className="canvas-board__tools" aria-label="画布工具占位">
-          <button type="button" aria-label="缩小">
-            −
+        <div className="canvas-board__tools" aria-label="作品工具">
+          <button type="button" onClick={onSaveWorkspace}>
+            保存
           </button>
-          <button type="button" aria-label="放大">
-            +
+          <button type="button" onClick={onLoadWorkspace}>
+            加载
           </button>
-          <button type="button" aria-label="全屏">
-            ⛶
+          <button type="button" onClick={exportPng}>
+            导出 PNG
           </button>
         </div>
       </div>
       <div className="canvas-board__surface">
         <Stage
+          ref={stageRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           className="canvas-board__stage"
@@ -440,6 +472,9 @@ export function CanvasBoard({ shapes }: CanvasBoardProps) {
           画布尺寸：{CANVAS_WIDTH} x {CANVAS_HEIGHT}
         </span>
         <span>图形数量：{shapes.length}</span>
+        <span>
+          {lastSavedAt ? `保存时间：${new Date(lastSavedAt).toLocaleString()}` : '尚未保存'}
+        </span>
       </footer>
     </section>
   );

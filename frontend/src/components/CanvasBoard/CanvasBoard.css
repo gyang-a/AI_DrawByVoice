@@ -30,16 +30,26 @@
 
 .canvas-board__tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .canvas-board__tools button {
-  width: 32px;
+  min-width: 64px;
   height: 32px;
+  padding: 0 10px;
   border: 1px solid #dfe5ef;
   border-radius: 8px;
   color: #344054;
   background: #f8fafc;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.canvas-board__tools button:hover {
+  border-color: #b8c2d6;
+  background: #eef4ff;
 }
 
 .canvas-board__surface {
@@ -63,6 +73,7 @@
 .canvas-board__meta {
   min-height: 44px;
   padding: 0 14px;
+  flex-wrap: wrap;
   border-radius: 8px;
   color: #475467;
   background: #f5f7fb;
