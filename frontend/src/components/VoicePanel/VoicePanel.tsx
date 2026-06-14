@@ -37,7 +37,7 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
       <h2 id="voice-panel-title">语音控制</h2>
       <div className={`voice-panel__placeholder${isVoiceActive ? ' voice-panel__placeholder--active' : ''}`}>
         <button
-          className="voice-panel__mic"
+          className={`voice-panel__mic ${isVoiceActive ? 'voice-panel__mic--active' : ''}`}
           type="button"
           aria-label={isVoiceActive ? '关闭实时语音监听' : '开启实时语音监听'}
           disabled={!canRecord}
@@ -58,7 +58,7 @@ export function VoicePanel<TCommand extends VoicePanelCommand>({
         </p>
       </div>
       <div className="voice-panel__section">
-        <h3>快捷指令（测试用）</h3>
+        <h3>快捷指令</h3>
         <div className="voice-panel__quick-actions" aria-label="快捷指令占位">
           {commands.map((command) => (
             <button
