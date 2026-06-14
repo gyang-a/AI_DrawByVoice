@@ -102,6 +102,7 @@ export function executeCommand(
           svg: command.svg ?? buildSvgFromParts(command.parts ?? [], command.width, command.height, command.viewBox),
           viewBox: command.viewBox,
           parts: command.parts,
+          animation: command.animation,
           x: command.x,
           y: command.y,
           width: command.width,
