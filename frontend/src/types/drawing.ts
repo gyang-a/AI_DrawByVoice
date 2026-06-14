@@ -45,7 +45,7 @@ export type BaseShape = {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  animation?: ObjectAnimation;
+  animation?: ObjectAnimation | null;
 };
 
 export type CircleShape = BaseShape & {
@@ -97,7 +97,7 @@ export type SvgCanvasItem = {
   svg: string;
   viewBox?: string;
   parts?: SvgPart[];
-  animation?: ObjectAnimation;
+  animation?: ObjectAnimation | null;
   x: number;
   y: number;
   width: number;
@@ -127,7 +127,7 @@ export type ShapePatch = Partial<{
   fill: string;
   stroke: string;
   strokeWidth: number;
-  animation: ObjectAnimation;
+  animation: ObjectAnimation | null;
 }>;
 
 export type DrawShapeCommand = {
@@ -141,7 +141,7 @@ export type DrawSvgCommand = {
   svg?: string;
   viewBox?: string;
   parts?: SvgPart[];
-  animation?: ObjectAnimation;
+  animation?: ObjectAnimation | null;
   x: number;
   y: number;
   width: number;

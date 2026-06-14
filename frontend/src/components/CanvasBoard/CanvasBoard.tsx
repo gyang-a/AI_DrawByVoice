@@ -157,7 +157,7 @@ function configureTransformOrigin(node: Konva.Node, animation: ObjectAnimation) 
 }
 
 function useObjectAnimation<TNode extends Konva.Node>(
-  animation: ObjectAnimation | undefined,
+  animation: ObjectAnimation | null | undefined,
   trigger: unknown,
 ) {
   const nodeRef = useRef<TNode | null>(null);
