@@ -33,17 +33,34 @@
   justify-content: center;
   flex-direction: column;
   gap: 12px;
-  color: #667085;
+  color: #0b0c0c;
   border: 1px dashed #c9d3e2;
   border-radius: 8px;
   background: #f8fafc;
 }
+.voice-panel__placeholder:hover{
+  border-color: #72a7f6;
+  background: #a7a9f2;
+  transition: background 0.4s, border-color 0.4s;
+}
 
 .voice-panel__placeholder--active {
-  color: #b42318;
-  border-color: #fda29b;
-  background: #fff1f0;
+  color: #1b0ce3;
+  border-color: #60acbd;
+  background: #959ce8;
+  /* animation: bgFlash 0.9s infinite alternate; */
 }
+
+@keyframes bgFlash {
+  from {
+    background: #8b93ec;
+  }
+  to {
+    background: #bdc0e4; /* 浅一点的同色系 */
+  }
+}
+
+
 
 .voice-panel__mic {
   width: 88px;
@@ -54,7 +71,35 @@
   background: linear-gradient(135deg, #4263eb, #7048e8);
   font-size: 32px;
   box-shadow: 0 14px 28px rgba(66, 99, 235, 0.28);
+  position: relative;
+  overflow: visible; /* 让波纹正常显示 */
 }
+
+/* 单圈波纹 */
+.voice-panel__mic--active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  border: 2px solid #291fed;
+  animation: micWave 1.6s ease-out infinite;
+}
+
+@keyframes micWave {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.5); /* 波纹扩散范围 */
+    opacity: 0;
+  }
+}
+
+
 
 .voice-panel__mic:disabled {
   cursor: not-allowed;
@@ -77,6 +122,7 @@
 }
 
 .voice-panel__box--reply {
+  max-height: 120px;
   color: #166534;
   background: #dcfce7;
 }
@@ -93,6 +139,13 @@
   border-radius: 8px;
   color: #344054;
   background: #ffffff;
+}
+
+.voice-panel__quick-actions button:hover {
+  border-color: #72a7f6;
+  opacity: 0.8;
+  background: #787bdf;
+  transition: background 0.4s, border-color 0.4s;
 }
 
 @media (max-width: 360px) {

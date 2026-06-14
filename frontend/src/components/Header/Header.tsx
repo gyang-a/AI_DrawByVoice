@@ -15,11 +15,9 @@ export function Header() {
       <div className="header__actions">
         <div className="header__status" aria-label="当前状态">
           <span className="header__status-dot" aria-hidden="true" />
-          <span>就绪 - 说话开始绘图</span>
+          <span>说话开始绘图</span>
         </div>
         <div className="header__voice-toggle" aria-label="语音反馈状态">
-          <span>语音反馈：开</span>
-          <span className="header__switch" aria-hidden="true" />
         </div>
         <button className="header__icon-button" type="button" aria-label="设置">
           ⚙
