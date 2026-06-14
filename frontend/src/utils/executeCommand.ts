@@ -12,7 +12,9 @@ const MAX_BATCH_DEPTH = 4;
 
 function compactShapePatch(params: ShapePatch): ShapePatch {
   return Object.fromEntries(
-    Object.entries(params).filter(([, value]) => value !== null && value !== undefined),
+    Object.entries(params).filter(([key, value]) => (
+      key === 'animation' ? value !== undefined : value !== null && value !== undefined
+    )),
   ) as ShapePatch;
 }
 

@@ -285,6 +285,7 @@ ObjectAnimation 是可选对象，用于 drawShape.shape.animation、drawSvg.ani
 •	easing 可省略，循环旋转建议使用 "linear"。
 •	keyframes[].offset 范围必须是 0 到 1。
 •	如果用户要求已有对象闪烁、旋转、平移、缩放，应使用 updateShape，并在 params 中设置 animation。
+•	如果用户要求暂停、停止、取消、关闭某个已有对象的动画，应使用 updateShape，并设置 params.animation = null。
 •	不要输出 SVG 内部动画标签，不要输出 CSS animation，不要输出 JavaScript。
 ====================
 六、ShapePatch 约束
@@ -479,10 +480,12 @@ o	轨迹线：path
 •	普通 shape：使用 updateShape。
 o	如果用户要求已有对象闪烁、高亮闪烁，使用 updateShape，并设置 params.animation 的 opacity track。
 o	如果用户要求已有对象旋转、转起来，使用 updateShape，并设置 params.animation 的 rotation track。
+o	如果用户要求暂停或停止已有对象动画，使用 updateShape，并设置 params.animation = null。
 •	drawSvg 对象：
 o	如果只是移动、缩放、改变整体尺寸，使用 updateShape 更新 x/y/width/height。
 o	如果是让已有 drawSvg 闪烁，使用 updateShape，并设置 params.animation 的 opacity track。
 o	如果是让已有 drawSvg 旋转、转起来，使用 updateShape，并设置 params.animation 的 rotation track。
+o	如果是暂停或停止已有 drawSvg 动画，使用 updateShape，并设置 params.animation = null。
 o	如果是修改内部结构或局部外观，使用 updateShape 返回新的 svg、viewBox、parts。
 o	如果修改太大，导致原对象已经变成另一个对象，可以使用 batch：deleteShape + drawShape 或 drawSvg。
 5.	如果用户要求删除已有图形，返回 deleteShape。
@@ -958,6 +961,39 @@ reply 必须是简短中文句子。
 }
 },
 "reply": "好的，已为您设置地球旋转。"
+}
+示例7-3：停止已有对象动画
+假设 scene 中存在：
+{
+"id": "shape_earth_1",
+"kind": "svg",
+"animation": {
+"duration": 5000,
+"loop": true,
+"tracks": [
+{
+"property": "rotation",
+"keyframes": [
+{"offset": 0, "value": 0},
+{"offset": 1, "value": 360}
+]
+}
+]
+}
+}
+用户输入：
+让地球停止旋转
+输出：
+{
+"recognizedText": "让地球停止旋转",
+"command": {
+"action": "updateShape",
+"targetId": "shape_earth_1",
+"params": {
+"animation": null
+}
+},
+"reply": "好的，已为您停止地球动画。"
 }
 示例8：修改 drawSvg 的位置和尺寸
 假设 scene 中存在：
