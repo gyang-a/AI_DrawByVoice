@@ -52,6 +52,12 @@
   background: #eef4ff;
 }
 
+.canvas-board__tools button:disabled {
+  color: #98a2b3;
+  cursor: not-allowed;
+  background: #f2f4f7;
+}
+
 .canvas-board__surface {
   width: 800px;
   height: 600px;

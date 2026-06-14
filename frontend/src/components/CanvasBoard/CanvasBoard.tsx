@@ -16,6 +16,8 @@ import './CanvasBoard.css';
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 const DEFAULT_ANIMATION_DURATION = 600;
+const WEBM_EXPORT_DURATION_MS = 5000;
+const WEBM_EXPORT_FPS = 60;
 const MIN_ANIMATION_DURATION = 120;
 const MAX_LOOP_ANIMATION_DURATION = 12000;
 
@@ -419,6 +421,25 @@ export function CanvasBoard({
   onSaveWorkspace,
 }: CanvasBoardProps) {
   const stageRef = useRef<Konva.Stage | null>(null);
+  const [isExportingWebm, setIsExportingWebm] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+
+  function downloadBlob(blob: Blob, extension: string) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    link.href = url;
+    link.download = `voice-canvas-${timestamp}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function getStageCanvas(): HTMLCanvasElement | null {
+    return stageRef.current?.container().querySelector('canvas') ?? null;
+  }
 
   function exportPng() {
     const stage = stageRef.current;
@@ -441,6 +462,65 @@ export function CanvasBoard({
     link.remove();
   }
 
+  function exportWebm() {
+    const canvas = getStageCanvas();
+
+    if (!canvas || typeof canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') {
+      setExportMessage('当前浏览器不支持 WebM 动画导出。');
+      return;
+    }
+
+    const supportedMimeType = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+
+    if (!supportedMimeType) {
+      setExportMessage('当前浏览器不支持 WebM 编码。');
+      return;
+    }
+
+    const stream = canvas.captureStream(WEBM_EXPORT_FPS);
+    const recorder = new MediaRecorder(stream, { mimeType: supportedMimeType });
+    const chunks: BlobPart[] = [];
+
+    setIsExportingWebm(true);
+    setExportMessage('正在录制 5 秒 WebM 动画。');
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      setIsExportingWebm(false);
+      setExportMessage('WebM 动画已导出。');
+
+      if (chunks.length === 0) {
+        setExportMessage('WebM 动画导出失败。');
+        return;
+      }
+
+      downloadBlob(new Blob(chunks, { type: supportedMimeType }), 'webm');
+    };
+
+    recorder.onerror = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      setIsExportingWebm(false);
+      setExportMessage('WebM 动画导出失败。');
+    };
+
+    recorder.start();
+    window.setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop();
+      }
+    }, WEBM_EXPORT_DURATION_MS);
+  }
+
   return (
     <section className="canvas-board" aria-labelledby="canvas-board-title">
       <div className="canvas-board__header">
@@ -454,6 +534,9 @@ export function CanvasBoard({
           </button>
           <button type="button" onClick={exportPng}>
             导出 PNG
+          </button>
+          <button type="button" disabled={isExportingWebm} onClick={exportWebm}>
+            {isExportingWebm ? '录制中' : '导出 WebM'}
           </button>
         </div>
       </div>
@@ -475,6 +558,7 @@ export function CanvasBoard({
         <span>
           {lastSavedAt ? `保存时间：${new Date(lastSavedAt).toLocaleString()}` : '尚未保存'}
         </span>
+        {exportMessage ? <span>{exportMessage}</span> : null}
       </footer>
     </section>
   );
