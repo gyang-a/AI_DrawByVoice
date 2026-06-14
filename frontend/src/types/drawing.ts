@@ -2,6 +2,36 @@ export type ShapeType = 'circle' | 'rect' | 'line' | 'text' | 'polygon' | 'path'
 
 export type ShapeId = string;
 
+export type AnimationProperty =
+  | 'x'
+  | 'y'
+  | 'opacity'
+  | 'rotation'
+  | 'scaleX'
+  | 'scaleY'
+  | 'width'
+  | 'height';
+
+export type AnimationEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+
+export type AnimationKeyframe = {
+  offset: number;
+  value: number;
+};
+
+export type AnimationTrack = {
+  property: AnimationProperty;
+  keyframes: AnimationKeyframe[];
+};
+
+export type ObjectAnimation = {
+  duration?: number;
+  delay?: number;
+  loop?: boolean;
+  easing?: AnimationEasing;
+  tracks: AnimationTrack[];
+};
+
 export type CanvasState = {
   width: number;
   height: number;
@@ -15,6 +45,7 @@ export type BaseShape = {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+  animation?: ObjectAnimation;
 };
 
 export type CircleShape = BaseShape & {
@@ -66,6 +97,7 @@ export type SvgCanvasItem = {
   svg: string;
   viewBox?: string;
   parts?: SvgPart[];
+  animation?: ObjectAnimation;
   x: number;
   y: number;
   width: number;
@@ -95,6 +127,7 @@ export type ShapePatch = Partial<{
   fill: string;
   stroke: string;
   strokeWidth: number;
+  animation: ObjectAnimation;
 }>;
 
 export type DrawShapeCommand = {
@@ -108,6 +141,7 @@ export type DrawSvgCommand = {
   svg?: string;
   viewBox?: string;
   parts?: SvgPart[];
+  animation?: ObjectAnimation;
   x: number;
   y: number;
   width: number;

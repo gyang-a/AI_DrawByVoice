@@ -6,7 +6,27 @@ from pydantic import BaseModel, Field, model_validator
 
 
 ShapeType = Literal["circle", "rect", "line", "text", "polygon", "path"]
+AnimationProperty = Literal["x", "y", "opacity", "rotation", "scaleX", "scaleY", "width", "height"]
+AnimationEasing = Literal["linear", "easeIn", "easeOut", "easeInOut"]
 MAX_BATCH_DEPTH = 10
+
+
+class AnimationKeyframe(BaseModel):
+    offset: float = Field(ge=0, le=1)
+    value: float
+
+
+class AnimationTrack(BaseModel):
+    property: AnimationProperty
+    keyframes: list[AnimationKeyframe] = Field(min_length=1)
+
+
+class ObjectAnimation(BaseModel):
+    duration: int | None = Field(default=None, ge=120, le=12000)
+    delay: int | None = Field(default=None, ge=0, le=3000)
+    loop: bool | None = None
+    easing: AnimationEasing | None = None
+    tracks: list[AnimationTrack] = Field(min_length=1)
 
 
 class BaseShape(BaseModel):
@@ -15,6 +35,7 @@ class BaseShape(BaseModel):
     fill: str | None = None
     stroke: str | None = None
     strokeWidth: int | None = None
+    animation: ObjectAnimation | None = None
 
 
 class CircleShape(BaseShape):
@@ -69,6 +90,7 @@ class SvgCanvasItem(BaseModel):
     svg: str
     viewBox: str | None = None
     parts: list[SvgPart] | None = None
+    animation: ObjectAnimation | None = None
     x: float
     y: float
     width: float
@@ -91,6 +113,7 @@ class ShapePatch(BaseModel):
     fill: str | None = None
     stroke: str | None = None
     strokeWidth: int | None = None
+    animation: ObjectAnimation | None = None
 
 
 class DrawShapeCommand(BaseModel):
@@ -104,6 +127,7 @@ class DrawSvgCommand(BaseModel):
     svg: str | None = None
     viewBox: str | None = None
     parts: list[SvgPart] | None = None
+    animation: ObjectAnimation | None = None
     x: float
     y: float
     width: float
