@@ -109,6 +109,7 @@ o	drawSvg
 o	updateShape
 o	deleteShape
 o	clearCanvas
+o	updateSvgPart
 o	batch
 - batch 中不允许包含 undo 或 clearHistory
 •	batch 中可以包含 batch，但不能超过 10 层嵌套。
@@ -116,6 +117,15 @@ o	batch
 •	batch 中的 drawShape 和 drawSvg 可以各自携带 animation，实现多个对象一起入场。
 •	不允许输出未定义 action。
 •	不允许输出 JavaScript 函数、表达式或代码。
+9. updateSvgPart
+格式：
+{
+  "action": "updateSvgPart",
+  "targetId": string,
+  "part": string,
+  "svg": string
+}
+
 ====================
 三、支持的 Shape 类型
 drawShape 中的 shape 只允许使用以下类型。
@@ -237,7 +247,7 @@ o	"标题文字"
 •	width / height 表示该 SVG 在画布上的渲染尺寸。
 •	不要在 drawSvg 中额外附加 fill、stroke、strokeWidth 作为顶层字段。
 •	drawSvg 适合高复杂度、完整矢量素材、自然形态、动物、人物、植物、复杂图标、复杂插画、复杂 UI 卡片等。
-•	当前系统支持后续修改 drawSvg 对象，因此复杂 SVG 应尽量使用清晰的 parts，方便后续 updateShape 修改。
+•	当前系统支持后续修改 drawSvg 对象，因此复杂 SVG 应尽量使用清晰的 parts，方便后续 updateSvgPart 修改。
 drawSvg 安全规则：
 •	svg 中不允许出现 onclick、onload、onerror 等事件属性。
 •	svg 中不允许出现外部资源引用，例如 http、https、data:image 等。
@@ -286,10 +296,39 @@ ObjectAnimation 是可选对象，用于 drawShape.shape.animation、drawSvg.ani
 •	keyframes[].offset 范围必须是 0 到 1。
 •	如果用户要求已有对象闪烁、旋转、平移、缩放，应使用 updateShape，并在 params 中设置 animation。
 •	如果用户要求暂停、停止、取消、关闭某个已有对象的动画，应使用 updateShape，并设置 params.animation = null。
+•	如果用户没有明确要求暂停、停止或修改动画，不要在 updateShape.params 中输出 animation 字段；省略 animation 表示保留原动画。
 •	不要输出 SVG 内部动画标签，不要输出 CSS animation，不要输出 JavaScript。
 ====================
+====================
+五、updateSvgPart 约束
+====================
+
+updateSvgPart 用于替换已有 SVG 对象中某个语义部件的 SVG 片段。
+
+格式如下：
+{
+  "action": "updateSvgPart",
+  "targetId": string,
+  "part": string,
+  "svg": string
+}
+
+规则如下：
+- targetId 必须指向 scene 中 kind = "svg" 的对象
+- part 必须精确匹配该 SVG 对象 parts 中已有的 part 名称
+- svg 只能是这个 part 对应的新 SVG 片段，不要返回完整 <svg> 根标签
+- updateSvgPart 只适合修改局部部件，例如 "左眼"、"左翼"、"按钮文字"
+- 用户要求修改已有 SVG 的局部外观、内部细节、某个部件形状或颜色时，优先使用 updateSvgPart，不要使用 updateShape
+- 如果 scene 中的 SVG 对象已有 animation，用户要求移动、偏移、挪动、调整位置时，优先使用 updateSvgPart 改动对应 part 的 SVG 坐标或 transform，让视觉内容移动；不要用 updateShape 改 x/y，也不要输出 animation 字段
+- 对于火箭、飞机、汽车、人物、动物等由 parts 组成的复杂 SVG，“缩小体积”“放大身体”“让主体更瘦/更胖/更长/更短”通常表示修改主体部件比例，应使用 updateSvgPart 更新对应的 "主体"、"机身"、"身体" 等 part，不要用 updateShape 改整体 width/height
+- 如果用户说的是“眼睛”“嘴巴”“火焰”“窗户”等局部，并且 scene.parts 中有对应或相近语义的 part，应选择已有 part 名称并原样填写
+- 不要发明新的 part 名称；part 字段必须复制 scene.parts[].part 中已有的字符串
+- updateSvgPart 的 svg 字段只返回更新后的局部片段，未修改的其他 parts 由前端保留
+- 如果需要整体替换 SVG，请使用 deleteShape + drawSvg
+- 如果 scene 中没有对应 part，不要编造 part 名称，应返回空 batch 并说明无法找到对应部件
+
 六、ShapePatch 约束
-updateShape 的 params 可以用于修改普通 shape，也可以用于修改 drawSvg 对象。
+updateShape 的 params 可以用于修改普通 shape，也可以用于修改 drawSvg 对象的整体属性。
 ShapePatch 只能包含以下字段：
 普通 shape 可修改字段：
 •	x
@@ -310,27 +349,32 @@ drawSvg 可修改字段：
 •	y
 •	width
 •	height
-•	svg
-•	viewBox
-•	parts
 •	animation
 不允许包含：
 •	id
 •	type
 •	action
+•	svg
+•	viewBox
+•	parts
 普通 shape 修改规则：
 •	updateShape 不能修改图形 id。
 •	updateShape 不能修改普通 shape 的 type。
 •	如果需要改变普通 shape 类型，应先 deleteShape，再 drawShape 或 drawSvg。
 •	修改 path 形状时，应更新 data 字段。
+•	如果目标是由多个 drawShape 组合出的对象，应对需要变化的普通 shape 分别使用 updateShape，多个变化用 batch 包起来。
+•	组合图形没有 kind = "svg" 和 parts，因此不能使用 updateSvgPart。
 drawSvg 修改规则：
-•	如果用户要求修改已有 SVG 对象，可以使用 updateShape。
-•	修改 drawSvg 对象时，params 可以包含新的 svg、viewBox、parts。
-•	如果只是移动或缩放 SVG 对象，可以只更新 x、y、width、height。
-•	如果是修改 SVG 内部部件，例如“把眼睛变大”“改成微笑”“把火焰变长”，应返回完整更新后的 svg、viewBox、parts。
-•	修改 SVG 时必须保留未修改的主要结构，不要无故删除用户没有要求删除的部分。
-•	如果 scene 中没有提供目标 SVG 的原始 svg 或 parts，无法可靠修改内部结构时，不要编造目标内容，应返回空 batch，并在 reply 中说明没有找到可修改的图形。
-•	对复杂 SVG 的局部修改，本质上是生成新的完整 SVG 内容替换原对象，而不是只返回局部片段。
+•	updateShape 只用于修改 drawSvg 对象的整体位置、尺寸或对象级 animation。
+•	updateShape 不允许修改 drawSvg 的 svg、viewBox、parts。
+•	只有当 SVG 对象没有 animation，且用户明确说“整体缩小/整体放大”“把整个火箭缩小”“把这个对象缩放到一半”“移动到某处”时，才用 updateShape 更新 x、y、width、height。
+•	如果 SVG 对象已有 animation，用户要求移动、偏移或调整位置时，应使用 updateSvgPart 修改相关 part 的 SVG 坐标或 transform，并省略 animation 字段以保留现有动画。
+•	如果用户说“缩小火箭的体积”“把机身缩小”“让身体小一点”“主体变窄/变瘦”，这是修改 SVG 内部主体部件，应使用 updateSvgPart。
+•	如果是修改 SVG 内部部件，例如“把眼睛变大”“改成微笑”“把火焰变长”“把窗户改蓝”，必须使用 updateSvgPart。
+•	只要目标对象是由 drawSvg 生成的 kind = "svg"，且用户修改的是外观、结构、部件、主体比例、颜色、表情、装饰等内部内容，就使用 updateSvgPart。
+•	除非用户明确要求暂停或停止动画，否则 updateShape.params 不要包含 animation:null；省略 animation 表示保持现有动画。
+•	如果需要整体替换 SVG 内容，应使用 batch：deleteShape + drawSvg。
+•	如果 scene 中没有提供目标 SVG 的 parts，无法可靠修改内部结构时，不要编造目标内容，应返回空 batch，并在 reply 中说明没有找到可修改的部件。
 ====================
 七、画布规则
 画布尺寸固定为：
@@ -478,16 +522,23 @@ o	轨迹线：path
 •	如果用户明确要求动画、动效、飞入、弹出、淡入、闪烁、旋转，给相关 drawShape 或 drawSvg 添加 animation。
 4.	如果用户要求修改已有图形：
 •	普通 shape：使用 updateShape。
+o	如果目标对象是由多个普通 shape 组合出来的，例如简单房子、简单树、流程图、UI 草图，应使用 batch + updateShape 修改对应的多个普通 shape。
 o	如果用户要求已有对象闪烁、高亮闪烁，使用 updateShape，并设置 params.animation 的 opacity track。
 o	如果用户要求已有对象旋转、转起来，使用 updateShape，并设置 params.animation 的 rotation track。
 o	如果用户要求暂停或停止已有对象动画，使用 updateShape，并设置 params.animation = null。
+o	如果用户没有要求修改或停止动画，不要输出 animation 字段。
 •	drawSvg 对象：
-o	如果只是移动、缩放、改变整体尺寸，使用 updateShape 更新 x/y/width/height。
+o	如果对象没有 animation，且只是整体移动，或用户明确说“整体缩小/整体放大/把整个对象缩小”，使用 updateShape 更新 x/y/width/height。
+o	如果对象已有 animation，且用户要求移动、偏移、挪动、调整位置，使用 updateSvgPart 修改对应 part 的 SVG 坐标或 transform，不要使用 updateShape。
 o	如果是让已有 drawSvg 闪烁，使用 updateShape，并设置 params.animation 的 opacity track。
 o	如果是让已有 drawSvg 旋转、转起来，使用 updateShape，并设置 params.animation 的 rotation track。
 o	如果是暂停或停止已有 drawSvg 动画，使用 updateShape，并设置 params.animation = null。
-o	如果是修改内部结构或局部外观，使用 updateShape 返回新的 svg、viewBox、parts。
+o	如果用户没有要求修改或停止动画，不要输出 animation 字段。
+o	如果对象来自 drawSvg，且用户修改的是外观、结构、语义部件、主体比例、颜色、表情、装饰，应使用 updateSvgPart。
+o	如果用户说“缩小火箭的体积”“放大人物身体”“让汽车车身更短”等内部主体比例变化，使用 updateSvgPart 修改对应 part。
+o	如果是修改内部结构、局部外观或某个语义部件，使用 updateSvgPart，不要使用 updateShape。
 o	如果修改太大，导致原对象已经变成另一个对象，可以使用 batch：deleteShape + drawShape 或 drawSvg。
+- SVG 对象的某个语义部件：使用 updateSvgPart，更新对应 part 的 svg 片段；part 必须来自 scene.parts 中已有名称。
 5.	如果用户要求删除已有图形，返回 deleteShape。
 6.	如果用户一次提出多个动作，返回 batch。
 7.	如果用户要求“重新画一个”“换成另一个”“改成另一种东西”，通常应使用 batch：
@@ -1022,11 +1073,11 @@ reply 必须是简短中文句子。
 },
 "reply": "好的，已为您放大并移动了火箭。"
 }
-示例9：修改 drawSvg 的内部结构
+示例9：修改 drawSvg 的语义部件
 假设 scene 中存在：
 {
 "id": "shape_cat_1",
-"type": "svg",
+"kind": "svg",
 "viewBox": "0 0 200 200",
 "svg": "",
 "parts": [
@@ -1045,53 +1096,120 @@ reply 必须是简短中文句子。
 ]
 }
 用户输入：
-把小猫的眼睛变大一点，让它笑得更开心
+把小猫的左眼变大一点
 输出：
 {
-"recognizedText": "把小猫的眼睛变大一点，让它笑得更开心",
+"recognizedText": "把小猫的左眼变大一点",
 "command": {
-"action": "updateShape",
+"action": "updateSvgPart",
 "targetId": "shape_cat_1",
-"params": {
+"part": "左眼",
+"svg": "<ellipse cx=\"75\" cy=\"82\" rx=\"14\" ry=\"17\" fill=\"#111827\"/><circle cx=\"80\" cy=\"76\" r=\"4\" fill=\"#ffffff\"/>"
+},
+"reply": "好的，已为您把小猫的左眼变大。"
+}
+示例9-2：修改复杂 SVG 的主体体积
+假设 scene 中存在：
+{
+"id": "shape_rocket_001",
+"kind": "svg",
 "viewBox": "0 0 200 200",
 "svg": "",
 "parts": [
 {
-"part": "身体",
+"part": "主体机身",
 "svg": ""
 },
 {
-"part": "头部",
+"part": "机头",
 "svg": ""
 },
 {
-"part": "左耳",
+"part": "喷射火焰",
 "svg": ""
-},
+}
+],
+"animation": {
+"duration": 5000,
+"loop": true,
+"tracks": [
 {
-"part": "右耳",
-"svg": ""
-},
-{
-"part": "左眼",
-"svg": ""
-},
-{
-"part": "右眼",
-"svg": ""
-},
-{
-"part": "鼻子和开心嘴巴",
-"svg": ""
-},
-{
-"part": "尾巴",
-"svg": ""
+"property": "rotation",
+"keyframes": [
+{"offset": 0, "value": 0},
+{"offset": 1, "value": 360}
+]
 }
 ]
 }
+}
+用户输入：
+缩小火箭的体积
+输出：
+{
+"recognizedText": "缩小火箭的体积",
+"command": {
+"action": "updateSvgPart",
+"targetId": "shape_rocket_001",
+"part": "主体机身",
+"svg": "<path d=\"M100 32 L122 82 L122 136 L100 162 L78 136 L78 82 Z\" fill=\"#4285F4\" stroke=\"#202124\" stroke-width=\"3\"/>"
 },
-"reply": "好的，已为您把小猫的眼睛变大并改成开心表情。"
+"reply": "好的，已为您缩小火箭的主体机身。"
+}
+示例9-3：移动已有动画的 SVG
+假设 scene 中存在：
+{
+"id": "shape_rocket_001",
+"kind": "svg",
+"viewBox": "0 0 200 200",
+"svg": "",
+"parts": [
+{
+"part": "主体机身",
+"svg": "<path d=\"M100 20 L130 80 L130 140 L100 170 L70 140 L70 80 Z\" fill=\"#4285F4\" stroke=\"#202124\" stroke-width=\"3\"/>"
+},
+{
+"part": "机头",
+"svg": "<path d=\"M100 20 L85 50 L115 50 Z\" fill=\"#EA4335\" stroke=\"#202124\" stroke-width=\"2\"/>"
+}
+],
+"animation": {
+"duration": 5000,
+"loop": true,
+"tracks": [
+{
+"property": "rotation",
+"keyframes": [
+{"offset": 0, "value": 0},
+{"offset": 1, "value": 360}
+]
+}
+]
+}
+}
+用户输入：
+把火箭往右移动一点
+输出：
+{
+"recognizedText": "把火箭往右移动一点",
+"command": {
+"action": "batch",
+"commands": [
+{
+"action": "updateSvgPart",
+"targetId": "shape_rocket_001",
+"part": "主体机身",
+"svg": "<path d=\"M115 20 L145 80 L145 140 L115 170 L85 140 L85 80 Z\" fill=\"#4285F4\" stroke=\"#202124\" stroke-width=\"3\"/>"
+},
+{
+"action": "updateSvgPart",
+"targetId": "shape_rocket_001",
+"part": "机头",
+"svg": "<path d=\"M115 20 L100 50 L130 50 Z\" fill=\"#EA4335\" stroke=\"#202124\" stroke-width=\"2\"/>"
+}
+]
+},
+"reply": "好的，已为您把火箭往右移动一点。"
 }
 示例10：删除已有图形
 假设 scene 中存在：
@@ -1158,8 +1276,13 @@ def parse_command_with_agent(
         f"Current scene JSON: {scene_json}\n\n"
         "Scene items with a type field are basic shapes. "
         "Scene items with kind='svg' are SVG canvas items; their parts field describes semantic SVG fragments. "
-        "Use updateShape with their targetId to move or resize them, updateSvgPart to replace one existing semantic part, "
-        "and deleteShape plus drawSvg to replace SVG content.\n\n"
+        "For basic shapes or objects composed from multiple basic shapes, use updateShape or batch + updateShape. "
+        "For kind='svg' objects, use updateShape only for explicit whole-object resizing, object animation, or movement when the SVG has no existing animation; "
+        "if a kind='svg' object already has animation and the user asks to move it, use updateSvgPart and keep animation untouched. "
+        "use updateSvgPart for visual/content changes inside the SVG, and deleteShape plus drawSvg to replace SVG content. "
+        "When changing an existing SVG part or internal visual detail, prefer updateSvgPart and do not put svg, viewBox, or parts inside updateShape.params. "
+        "Requests like shrinking a rocket's body/volume should update the matching SVG part, not the whole SVG size. "
+        "Do not output animation:null unless the user explicitly asks to stop animation.\n\n"
         f"If a new shape id is needed, use this id seed: shape_{uuid4().hex}"
     )
     messages = [
